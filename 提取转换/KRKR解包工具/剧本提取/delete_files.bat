@@ -1,0 +1,1 @@
+python delete_files.py ks.resx

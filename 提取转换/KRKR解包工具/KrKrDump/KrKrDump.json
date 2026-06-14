@@ -1,0 +1,16 @@
+{
+    "loglevel": 1,
+    "enableExtract": true,
+    "outputDirectory": "F:\\360\\sanoba witch\\dump",
+    "rules": [
+        "file://\\./.+?\\.xp3>(.+?\\..+$)",
+        "archive://./(.+)",
+        "arc://./(.+)",
+        "bres://./(.+)"
+    ],
+    "includeExtensions": [],
+    "excludeExtensions": [
+        ".ogg"
+    ],
+    "decryptSimpleCrypt": true
+}

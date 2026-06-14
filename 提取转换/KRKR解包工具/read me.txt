@@ -1,0 +1,25 @@
+感谢所有大佬的辛勤付出！！
+我只是将文件整合，统一做出说明而已。
+本工具包至少适用于yuzusoft大多数游戏。最好是官中原版。若没有，使用英文原版。若还是没有，使用汉化组版本大概率只能用krkrdump
+---
+概括性解包步骤
+1.搜索游戏年份。大于2016的使用KrkrExtract.Lite或krkrdump，小于的使用xp3viewer。特别的，非官中的使用KrkrExtract或krkrdump而不是xp3viewer
+2.尝试解包。优先级：xp3viewer，KrkrExtract.Lite，krkrdump.一种失败后再更换。
+3.初步解包中 等待解包完成。xp3viewer没弹出两个窗口即为失败，KrkrExtract.Lite同，若解包出的文件为乱码没后缀名也失败。krkrdump不太可能失败，只是麻烦需要运行玩游戏全流程。
+3.1.krkrz直接用KrkrExtractForCxdecV2+hxv4_deobf_tools。详情见文章。
+4.a.音频 若初步解包出的音频（可能的格式 opus ogg wav mp3）无法播放，若使用xp3viewer，KrkrExtract无解，尝试用krkrdump
+                                                                                                                  若使用krkrdump，检查是否跑完整条语音
+q1.为什么播放语音一半就停止/下一条？
+a1.你的播放器太辣鸡或设置有问题
+q2.为什么播放一半显示无法播放/不支持的解码？
+a2.没有解包完全。检查是否跑完整条语音
+
+4.b 图像 若初步解包出的可查看图像仅仅包含系统ui
+a.在解包目录下搜索.tlg（立绘）文件，使用garbro打开解包并批量转换格式，再用AutoCGAligner整合 #立绘
+b.在解包目录下搜索.mtn（sd q版小人）文件，使用garbro打开解包并批量输出，自己ps #sd q版小人
+c.在解包目录下搜索.pimg（cg）文件，使用FreeMoteViewer目录下的PsbDecompile.exe进行拆解。可根据拆解出的规则文件进行自己手动ps，也可以用AutoCGAligner整合 #立绘
+q1.为什么解包失败
+a1.检查是否解包完全，是否跑完整条流程。若确实跑完...我就真不知道了   :(
+部分视频文件自行探索。各游戏视频存放位置和封装格式不同
+
+至此完全解包。若有更深需求，如live2d动画与拆分得太细的立绘，在此不过多赘述，自行去搜索探索。

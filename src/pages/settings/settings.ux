@@ -1,0 +1,726 @@
+<template> 
+    <div class="page" onswipe="saveSettings"> 
+        
+    <img class="bcg"src="/common/bcgi/異世界_前景a.jpg"></img> 
+    <img class="bt"src="/common/bt.png"></img> 
+    <img class="hd"src="/common/hd.png"></img> 
+    
+    <scroll id="mainScroll" class="scroll" scroll-y="{{true}}" >
+        <div class="header">
+            <text class="title">设置</text>  
+        </div>
+        
+        <!-- 文本播放速度设置 -->
+        <div class="setting-section">
+            <text class="section-title">文本播放速度</text> 
+            <slider class="slider" min="5" max="40" step="5" value="{{textSpeed}}" @change="updateTextSpeed"/> 
+            <div class="slider-labels">
+                <text class="label">快</text>
+                <text class="current-value">当前速度:{{textSpeed}}ms/字</text> 
+                <text class="label">慢</text>
+            </div>
+
+            <text class="section-title">字体大小</text> 
+            <slider class="slider" min="16" max="40" step="2" value="{{fontSize}}" @change="updateFontSize"/> 
+            <div class="slider-labels">
+                <text class="label">小</text>
+                <text class="current-value">当前字体大小:{{fontSize}}px</text> 
+                <text class="label">大</text>
+            </div>
+            
+            <text class="section-title">自动播放速度</text> 
+            <slider class="slider" min="500" max="3000" step="100" value="{{autoPlayDelay}}" @change="updateAutoSpeed"/> 
+            <div class="slider-labels">
+                <text class="label">快</text>
+                <text class="current-value">当前速度:{{autoPlayDelay}}ms</text> 
+                <text class="label">慢</text>
+            </div>
+        </div>
+
+
+        <!-- 修改后的开关设置 -->
+        <div class="setting-section">
+            <div class="switch-row">
+                <text class="switch-label">屏幕常亮</text>
+                <switch checked="{{screenAlwaysOn}}" class="switch" @change="onScreenAlwaysOnChange"></switch>
+            </div>
+            <div class="switch-row">
+                <text class="switch-label">粗体</text>
+                <switch checked="{{boldText}}" class="switch" @change="onBoldTextChange"></switch>
+            </div>
+            <div class="switch-row">
+                <text class="switch-label2">仅跳过已读文本</text>
+                <switch checked="{{skipOnlyRead}}" class="switch" @change="onSkipOnlyReadChange"></switch>
+            </div>
+        </div>
+
+
+        <!-- 未读文本颜色设置 -->
+        <div class="setting-section">
+            <text class="section-title">未读文本颜色</text> 
+            <div class="color-picker"> 
+                <div class="color-option" for="{{unreadColors}}" onclick="selectUnreadColor($idx)"> 
+                    <div class="color-circle" style="background-color: {{$item.color}};"></div> 
+                    <!-- <text class="color-name">{{$item.name}}</text>  -->
+                    <div class="color-check" if="{{$item.color === unreadColor}}"></div> 
+                </div> 
+            </div> 
+            <text class="section-title">已读文本颜色</text> 
+            <div class="color-picker"> 
+                <div class="color-option" for="{{readColors}}" onclick="selectReadColor($idx)"> 
+                    <div class="color-circle" style="background-color: {{$item.color}};"></div> 
+                    <!-- <text class="color-name">{{$item.name}}</text>  -->
+                    <div class="color-check" if="{{$item.color === readColor}}"></div> 
+                </div> 
+            </div> 
+        </div>
+        <div class="setting-section">
+            <text class="section-title">!!!用户数据慎重重置!!!</text> 
+            <text class="reset" onclick="resetAllSettings">重置所有设置</text> 
+            <text class="reset" onlongpress="resetUserData">长按重置用户数据</text> 
+        </div>
+        <!-- 颜色预览 -->
+        <div class="setting-section">
+            <text class="section-title">颜色预览</text> 
+            <div class="preview-area"> 
+                <text class="preview-text" style="font-size: {{fontSize}}px; color: {{unreadColor}}; font-weight: {{boldText ? 'bold' : 'normal'}}"> 
+                    未读文本颜色预览
+                </text> 
+                <text class="preview-text" style="font-size: {{fontSize}}px; color: {{readColor}}; font-weight: {{boldText ? 'bold' : 'normal'}}"> 
+                    已读文本颜色预览
+                </text> 
+            </div> 
+        </div>
+        
+        <!-- 速度预览 -->
+        <div class="setting-section">
+            <text class="section-title">速度预览</text> 
+            <div class="preview-area" onclick="startPreview"> 
+                <text class="preview-text" style="font-size: {{fontSize}}px; font-weight: {{boldText ? 'bold' : 'normal'}}">{{previewText}}</text> 
+            </div> 
+            <text class="hint-text">点击预览区域测试效果</text> 
+        </div>
+        <text class="title"> </text> 
+    </scroll>
+        <img class="back-btn"src="/common/back.png" onclick="back"></img> 
+    </div> 
+</template> 
+
+<script> 
+import router from '@system.router' 
+import storage from '@system.storage' 
+import prompt from '@system.prompt'
+
+export default { 
+    data: { 
+        textSpeed: 15, 
+        fontSize: 22,
+        autoPlayDelay: 1600,  // 新增：自动播放速度
+        screenAlwaysOn: true,  // 新增：屏幕常亮
+        boldText: false,       // 新增：粗体
+        skipOnlyRead: true,   // 新增：仅跳过已读文本
+        unreadColor: '#ffffff',
+        readColor: '#d495d4',
+        previewText: "点击这里预览文本播放效果", 
+        previewTimeoutIds: [],
+        // 修改后的颜色选项
+        unreadColors: [
+            { name: '白色', color: '#ffffff' },
+            { name: '淡蓝', color: '#a0d2ff' },
+            { name: '淡灰', color: '#cccccc' },
+            { name: '淡紫', color: '#e6a0ff' }
+        ],
+        readColors: [
+            { name: '淡紫', color: '#e6a0ff' },
+            { name: '蓝色', color: '#6688cc' },
+            { name: '灰色', color: '#aaaaaa' },
+            { name: '白色', color: '#ffffff' }
+        ]
+    }, 
+    
+    onInit() { 
+        this.loadSettings();
+    }, 
+    
+    onDestroy() { 
+        this.clearAllTimeouts();
+    }, 
+
+    back() { 
+        this.saveSettings();
+        router.back();
+    }, 
+    
+    onBackPress(){ 
+        this.saveSettings();
+        return false;
+    },
+    
+    loadSettings() {
+        storage.get({ 
+            key: 'textSpeedSetting', 
+            success: (data) => { 
+                if (data) { 
+                    this.textSpeed = Number(data);
+                } 
+            } 
+        });
+        
+        storage.get({ 
+            key: 'fontSizeSetting', 
+            success: (data) => { 
+                if (data) { 
+                    this.fontSize = Number(data);
+                } 
+            } 
+        });
+        
+        // 新增：加载自动播放速度
+        storage.get({ 
+            key: 'autoPlayDelaySetting', 
+            success: (data) => { 
+                if (data) { 
+                    this.autoPlayDelay = Number(data);
+                } 
+            } 
+        });
+        
+        // 新增：加载屏幕常亮设置
+        storage.get({ 
+            key: 'screenAlwaysOnSetting', 
+            success: (data) => { 
+                if (data !== null && data !== undefined) {
+                    this.screenAlwaysOn = data === 'true';
+                } 
+            } 
+        });
+        
+        // 新增：加载粗体设置
+        storage.get({ 
+            key: 'boldTextSetting', 
+            success: (data) => { 
+                if (data !== null && data !== undefined) {
+                    this.boldText = data === 'true';
+                } 
+            } 
+        });
+        
+        // 新增：加载仅跳过已读文本设置
+        storage.get({ 
+            key: 'skipOnlyReadSetting', 
+            success: (data) => { 
+                if (data !== null && data !== undefined) {
+                    this.skipOnlyRead = data === 'true';
+                } 
+            } 
+        });
+        
+        storage.get({ 
+            key: 'unreadColorSetting', 
+            success: (data) => { 
+                if (data) { 
+                    this.unreadColor = data;
+                } 
+            } 
+        });
+        
+        storage.get({ 
+            key: 'readColorSetting', 
+            success: (data) => { 
+                if (data) { 
+                    this.readColor = data;
+                } 
+            } 
+        });
+    },
+    
+    updateTextSpeed(e) { 
+        this.textSpeed = e.progress;
+    },
+    
+    updateFontSize(e) {
+        this.fontSize = e.progress;
+    },
+    
+    // 新增：更新自动播放速度
+    updateAutoSpeed(e) {
+        this.autoPlayDelay = e.progress;
+    },
+    
+    // 新增：屏幕常亮开关变化
+    onScreenAlwaysOnChange(e) {
+        this.screenAlwaysOn = e.checked;
+    },
+    
+    // 新增：粗体开关变化
+    onBoldTextChange(e) {
+        this.boldText = e.checked;
+    },
+    
+    // 新增：仅跳过已读文本开关变化
+    onSkipOnlyReadChange(e) {
+        this.skipOnlyRead = e.checked;
+    },
+    
+    selectUnreadColor(index) {
+        this.unreadColor = this.unreadColors[index].color;
+    },
+    
+    selectReadColor(index) {
+        this.readColor = this.readColors[index].color;
+    },
+    
+    startPreview() { 
+        this.clearAllTimeouts();
+        this.previewText = "";
+        const fullText = "这是一个文本播放速度的预览示例，您可以调整滑块来改变播放速度。";
+        
+        for (let i = 0; i <= fullText.length; i++) { 
+            const timeoutId = setTimeout(() => { 
+                this.previewText = fullText.substring(0, i);
+                
+                if (i === fullText.length) { 
+                    const restartId = setTimeout(() => { 
+                        this.startPreview();
+                    }, 2000);
+                    this.previewTimeoutIds.push(restartId);
+                } 
+            }, i * this.textSpeed * 0.5);
+            
+            this.previewTimeoutIds.push(timeoutId);
+        } 
+    }, 
+    
+    clearAllTimeouts() { 
+        this.previewTimeoutIds.forEach(id => { 
+            clearTimeout(id);
+        });
+        this.previewTimeoutIds = [];
+    },
+    
+    // 重置所有设置
+    resetAllSettings() {
+        this.resetToDefaults();
+        prompt.showToast({
+            message: '所有设置已重置为默认值',
+            duration: 2000
+        });
+    },
+    
+    // 重置用户数据
+    resetUserData() {
+        this.performUserDataReset();
+        prompt.showToast({
+            message: '用户数据重置中',
+            duration: 2000
+        })
+    },
+    
+    // 执行用户数据重置（适配新的分块存储方式）
+    async performUserDataReset() {
+        console.log('开始重置用户数据（适配分块存储）');
+        
+        // 1. 重置阅读进度
+        storage.set({
+            key: 'readProgress',
+            value: '1',
+            success: () => {
+                console.log('阅读进度已重置为1');
+            },
+            fail: (error) => {
+                console.error('重置阅读进度失败:', error);
+            }
+        });
+        
+        // 2. 清空已读页面分块记录
+        // 根据 detail 页面的实现，已读页面使用 readBlock_X 存储
+        // 对话数量69000条，每块500条，最多138块（69000/500=138）
+        // 我们删除前150块以确保完全清除
+        const blockDeletePromises = [];
+        for (let i = 0; i < 150; i++) {
+            const promise = new Promise((resolve) => {
+                storage.delete({
+                    key: `readBlock_${i}`,
+                    success: () => {
+                        console.log(`已删除块 readBlock_${i}`);
+                        resolve(true);
+                    },
+                    fail: (error) => {
+                        // 可能该块不存在，忽略错误
+                        console.log(`块 readBlock_${i} 删除失败或不存在:`, error);
+                        resolve(true);
+                    }
+                });
+            });
+            blockDeletePromises.push(promise);
+        }
+        
+        // 3. 清空旧版已读页面记录（兼容旧版本）
+        storage.set({
+            key: 'readPages',
+            value: JSON.stringify({}),
+            success: () => {
+                console.log('已读页面记录（旧版）已清空');
+            },
+            fail: (error) => {
+                console.error('清空已读页面记录（旧版）失败:', error);
+            }
+        });
+        
+        // 4. 清空分支选择记录
+        storage.set({
+            key: 'branchChoices',
+            value: JSON.stringify({}),
+            success: () => {
+                console.log('分支选择记录已清空');
+            },
+            fail: (error) => {
+                console.error('清空分支选择记录失败:', error);
+            }
+        });
+        
+        // 5. 清空所有存档
+        const savePromises = [];
+        for (let i = 1; i <= 30; i++) {
+            const promise = new Promise((resolve) => {
+                storage.set({
+                    key: `p${i}`,
+                    value: '1',
+                    success: () => {
+                        console.log(`存档${i}已重置为1`);
+                        resolve(true);
+                    },
+                    fail: (error) => {
+                        console.error(`重置存档${i}失败:`, error);
+                        resolve(false);
+                    }
+                });
+            });
+            savePromises.push(promise);
+        }
+        
+        // 6. 重置存档位配置为默认值
+        storage.set({
+            key: 'saveSlots',
+            value: JSON.stringify([
+                { id: 1, text: "空", progress: 1 },
+                { id: 2, text: "空", progress: 1 },
+                { id: 3, text: "空", progress: 1 },
+                { id: 4, text: "空", progress: 1 },
+                { id: 5, text: "空", progress: 1 }
+            ]),
+            success: () => {
+                console.log('存档位配置已重置为默认值');
+            },
+            fail: (error) => {
+                console.error('重置存档位配置失败:', error);
+            }
+        });
+        
+        // 等待所有删除和重置操作完成
+        try {
+            await Promise.all([...blockDeletePromises, ...savePromises]);
+            console.log('所有用户数据已重置完成');
+            
+            // 显示成功提示
+            prompt.showToast({
+                message: '用户数据已重置',
+                duration: 3000
+            });
+        } catch (error) {
+            console.error('重置用户数据过程中出错:', error);
+            prompt.showToast({
+                message: '重置过程中出现错误',
+                duration: 3000
+            });
+        }
+    },
+    
+    // 重置为默认值
+    resetToDefaults() {
+        // 重置所有设置为默认值
+        this.textSpeed = 15;
+        this.fontSize = 22;
+        this.autoPlayDelay = 1600;
+        this.screenAlwaysOn = true;
+        this.boldText = false;
+        this.skipOnlyRead = true;
+        this.unreadColor = '#ffffff';
+        this.readColor = '#e6a0ff';  // 修改为新的默认值（淡紫）
+        
+        // 清除预览
+        this.clearAllTimeouts();
+        this.previewText = "点击这里预览文本播放效果";
+        
+        // 立即保存重置后的设置
+        this.saveSettings();
+        
+        console.log('设置已重置为默认值');
+    },
+    
+    saveSettings() { 
+        storage.set({ 
+            key: 'textSpeedSetting', 
+            value: this.textSpeed.toString()
+        });
+        
+        storage.set({ 
+            key: 'fontSizeSetting', 
+            value: this.fontSize.toString()
+        });
+        
+        // 新增：保存自动播放速度
+        storage.set({ 
+            key: 'autoPlayDelaySetting', 
+            value: this.autoPlayDelay.toString()
+        });
+        
+        // 新增：保存屏幕常亮设置
+        storage.set({ 
+            key: 'screenAlwaysOnSetting', 
+            value: this.screenAlwaysOn.toString()
+        });
+        
+        // 新增：保存粗体设置
+        storage.set({ 
+            key: 'boldTextSetting', 
+            value: this.boldText.toString()
+        });
+        
+        // 新增：保存仅跳过已读文本设置
+        storage.set({ 
+            key: 'skipOnlyReadSetting', 
+            value: this.skipOnlyRead.toString()
+        });
+        
+        storage.set({ 
+            key: 'unreadColorSetting', 
+            value: this.unreadColor
+        });
+        
+        storage.set({ 
+            key: 'readColorSetting', 
+            value: this.readColor
+        });
+        
+        console.log('设置已保存');
+    } 
+} 
+</script> 
+
+<style> 
+.page { 
+    background-color: #f5f5f7; 
+    flex-direction: column; 
+    justify-content: flex-start; 
+    align-items: center; 
+} 
+
+.bcg{
+    position: absolute;
+    width: 336px;
+    height: 480px;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+.bt{
+    position: absolute;
+    bottom: 0;
+}
+.hd{
+    position: absolute;
+    top: 0;
+}
+.scroll{
+  height: 400px;
+  text-align: left;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  z-index: 0;
+  flex: 1;
+  width: 90%;
+}
+.header {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 20px;
+}
+
+.title { 
+    font-size: 36px;
+    color: #ebebeb;
+    font-weight: bold;
+} 
+
+
+.back-btn { 
+    position:absolute;
+    left:15px;
+    top: 15px;
+} 
+
+.setting-section {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.747);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+.section-title { 
+    font-size: 26px; 
+    color: #333333; 
+    font-weight: bold; 
+    margin-bottom: 8px;
+    text-align: center;
+} 
+
+/* 新增：开关行样式 */
+.switch-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    padding: 8px 0;
+}
+
+.switch-row {
+    border-bottom: none;
+}
+
+.switch-label {
+    font-size: 26px;
+    color: #333333;
+    font-weight: bold;
+    flex: 1;
+}
+.switch-label2 {
+    font-size: 20px;
+    color: #333333;
+    font-weight: bold;
+    flex: 1;
+}
+.switch {
+    margin-left: 15px;
+    height: 30px;
+    width: 70px;
+}
+
+.slider { 
+    width: 90%; 
+    margin-top: 8px; 
+    margin-bottom: 6px; 
+} 
+
+.slider-labels {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 90%;
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.label {
+    font-size: 22px;
+    color: #666666;
+}
+
+.current-value {
+    font-size: 22px;
+    color: #888888;
+    text-align: center;
+}
+
+.reset {
+    font-size: 24px;
+    color: #EA6C6C;
+    font-weight: bold;
+    margin-top: 15px;
+    padding: 8px 16px;
+    border: 1px solid #EA6C6C;
+    border-radius: 8px;
+    background-color: rgba(234, 108, 108, 0.1);
+}
+
+.preview-area { 
+    width: 95%; 
+    min-height: 80px; 
+    background-color: rgba(0, 0, 0, 0.068); 
+    border-radius: 8px; 
+    border: 1px solid #e0e0e0; 
+    padding: 12px; 
+    margin-top: 8px; 
+    margin-bottom: 8px; 
+    justify-content: center; 
+    align-items: center; 
+    flex-direction: column;
+} 
+
+.preview-text { 
+    color: #000000; 
+    text-align: center; 
+} 
+
+.color-picker {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.color-option {
+    flex-direction: column;
+    align-items: center;
+    margin-left: 12px;
+    margin-right: 12px;
+    padding:4px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.03);
+    width: 40px;
+    position: relative;
+}
+
+.color-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 16px;
+    border: 2px solid #ddd;
+}
+
+.color-name {
+    font-size: 12px;
+    color: #666666;
+    margin-top: 4px;
+    text-align: center;
+}
+
+.color-check {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    line-height: 18px;
+}
+
+.hint-text {
+    font-size: 20px;
+    color: #888888;
+    text-align: center;
+    margin-top: 4px;
+}
+</style>

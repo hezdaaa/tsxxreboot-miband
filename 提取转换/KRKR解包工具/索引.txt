@@ -1,0 +1,9 @@
+工具                                对应的后缀或文件
+garbro                            .tlg（立绘） .mtn（sd） 
+FreeMoteViewer             .pimg（cg）.ks.scn（加密剧本）
+AutoCGAligner               解包后的cg
+krkrFgiEditor                  .tlg（立绘）的拼接
+KrkrPbdStandViewer      立绘的拼接，.pbd无需解密
+pbd2json                        立绘规则文件解密
+KrkrExtractForCxdecV2   krkrz档案初步解包
+hxv4_deobf_tools-master krkrz档案哈希值名还原

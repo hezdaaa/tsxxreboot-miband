@@ -1,0 +1,406 @@
+<template> 
+    <div class="page"> 
+    <img class="bcg" src="/common/bcgi/空_夕.jpg"></img> 
+
+        <scroll id="mainScroll" class="scroll" scroll-y="{{true}}">
+            <!-- 共通线（包含主线所有章节 + 选项） -->
+            <div class="page1" if="{{page === 1}}">
+                <div class="content1">
+                    <text class="mid1">共通线</text>
+                </div>
+                <!-- 主线所有章节 -->
+                <div for="{{commonChapters}}" tid="line" class="content" @click="loadStart($item.line)">
+                    <text class="mid">{{$item.label}}</text>
+                <text class="mid2">↓</text>
+                </div>
+                <text class="mid">◆</text>
+                <text class="mid2"></text>
+            </div>
+
+            <div class="page1" if="{{page === 2}}">
+                <div class="content1">
+                    <text class="mid1">白雪 乃爱</text>
+                </div>
+                <div for="{{naiaiChapters}}" tid="line" class="content" @click="loadStart($item.line)">
+                    <text class="mid">{{$item.label}}</text>
+                <text class="mid2">↓</text>
+                </div>
+                <text class="mid" @click="loadStart(19584)">后日谈</text>
+                <text class="mid2"></text>
+            </div>
+
+            <div class="page1" if="{{page === 3}}">
+                <div class="content1">
+                    <text class="mid1">谷风 天音</text>
+                </div>
+                <div for="{{tianyinChapters}}" tid="line" class="content" @click="loadStart($item.line)">
+                    <text class="mid">{{$item.label}}</text>
+                <text class="mid2">↓</text>
+                </div>
+                <text class="mid" @click="loadStart(29607)">后日谈</text>
+                <text class="mid2"></text>
+            </div>
+
+            <div class="page1" if="{{page === 4}}">
+                <div class="content1">
+                    <text class="mid1">小云雀 来海</text>
+                </div>
+                <div for="{{laihaiChapters}}" tid="line" class="content" @click="loadStart($item.line)">
+                    <text class="mid">{{$item.label}}</text>
+                <text class="mid2">↓</text>
+                </div>
+                <text class="mid" @click="loadStart(40353)">后日谈</text>
+                <text class="mid2"></text>
+            </div>
+
+            <div class="page1" if="{{page === 5}}">
+                <div class="content1">
+                    <text class="mid1">星河 辉耶</text>
+                </div>
+                <div for="{{huiyeChapters}}" tid="line" class="content" @click="loadStart($item.line)">
+                    <text class="mid">{{$item.label}}</text>
+                <text class="mid2">↓</text>
+                </div>
+                <text class="mid" @click="loadStart(49532)">后日谈</text>
+                <text class="mid2"></text>
+            </div>
+
+            <div class="page1" if="{{page === 6}}">
+                <div class="content1">
+                    <text class="mid1">高楯 欧丽叶</text>
+                </div>
+                <div for="{{oliyeChapters}}" tid="line" class="content" @click="loadStart($item.line)">
+                    <text class="mid">{{$item.label}}</text>
+                <text class="mid2">↓</text>
+                </div>
+                <text class="mid" @click="loadStart(55951)">后日谈</text>
+                <text class="mid2"></text>
+            </div>
+
+            <div class="page1" if="{{page === 7}}">
+                <div class="content1">
+                    <text class="mid1">百里 风实花</text>
+                </div>
+                <div for="{{fengshihuaChapters}}" tid="line" class="content" @click="loadStart($item.line)">
+                    <text class="mid">{{$item.label}}</text>
+                <text class="mid2">↓</text>
+                </div>
+                <text class="mid" @click="loadStart(60805)">后日谈</text>
+                <text class="mid2"></text>
+            </div>
+        </scroll>
+            <img class="bt" src="/common/bt.png"></img> 
+            <img class="hd" src="/common/hd.png"></img> 
+
+            <text class="title1">点击跳转至对应进度</text>
+            <div class="header">
+                <text class="title">流程图</text> 
+            </div>
+        <img class="back-btn" src="/common/back.png" onclick="back"></img> 
+        <img class="last-btn" src="/common/back.png" onclick="last"></img> 
+        <img class="enter-btn" src="/common/go.png" onclick="enter"></img>
+
+    </div> 
+</template> 
+
+<script> 
+import storage from '@system.storage'
+import router from '@system.router' 
+
+export default { 
+    data:{ 
+        page:1,
+        // 共通线所有主线章节
+        commonChapters: [
+            { line: 1, label: 'CHAPTER1-1' },
+            { line: 728, label: 'CHAPTER1-2' },
+            { line: 1468, label: 'CHAPTER1-3' },
+            { line: 2251, label: 'CHAPTER1-4' },
+            { line: 2729, label: 'CHAPTER1-5' },
+            { line: 3487, label: 'CHAPTER2-1' },
+            { line: 4375, label: 'CHAPTER2-2' },
+            { line: 4779, label: 'CHAPTER2-3' },
+            { line: 5407, label: 'CHAPTER2-4' },
+            { line: 5651, label: 'CHAPTER2-5' },
+            { line: 6322, label: 'CHAPTER2-6' },
+            { line: 7305, label: 'CHAPTER3-1' },
+            { line: 8234, label: 'CHAPTER3-2' },
+            { line: 8589, label: 'CHAPTER3-3' },
+            { line: 8902, label: 'CHAPTER3-4' }
+        ],
+        // 白雪乃爱个人线章节
+        naiaiChapters: [
+            { line: 10705, label: 'CHAPTER4-1' },
+            { line: 11212, label: 'CHAPTER4-2' },
+            { line: 11693, label: 'CHAPTER4-3' },
+            { line: 12129, label: 'CHAPTER5-1' },
+            { line: 12799, label: 'CHAPTER5-2' },
+            { line: 13205, label: 'CHAPTER5-3' },
+            { line: 14065, label: 'CHAPTER5-4' },
+            { line: 15044, label: 'CHAPTER6-1' },
+            { line: 15404, label: 'CHAPTER6-2' },
+            { line: 16240, label: 'CHAPTER6-3' },
+            { line: 16880, label: 'CHAPTER6-4' },
+            { line: 17106, label: 'CHAPTER6-5' },
+            { line: 18181, label: 'CHAPTER7-1' },
+            { line: 18504, label: 'CHAPTER7-2' },
+            { line: 19434, label: 'CHAPTER8-1' },
+            { line: 19584, label: 'CHAPTER9-1' }
+        ],
+        // 谷风天音个人线章节
+        tianyinChapters: [
+            { line: 20447, label: 'CHAPTER4-1' },
+            { line: 20985, label: 'CHAPTER4-2' },
+            { line: 21689, label: 'CHAPTER4-3' },
+            { line: 22479, label: 'CHAPTER4-4' },
+            { line: 23584, label: 'CHAPTER5-1' },
+            { line: 23950, label: 'CHAPTER5-2' },
+            { line: 25290, label: 'CHAPTER5-3' },
+            { line: 25492, label: 'CHAPTER5-4' },
+            { line: 26413, label: 'CHAPTER6-1' },
+            { line: 26834, label: 'CHAPTER6-2' },
+            { line: 27597, label: 'CHAPTER6-3' },
+            { line: 28346, label: 'CHAPTER7-1' },
+            { line: 28366, label: 'CHAPTER7-2' },
+            { line: 28727, label: 'CHAPTER7-3' },
+            { line: 29607, label: 'CHAPTER8-1' }
+        ],
+        // 小云雀来海个人线章节
+        laihaiChapters: [
+            { line: 30231, label: 'CHAPTER4-1' },
+            { line: 30584, label: 'CHAPTER4-2' },
+            { line: 30911, label: 'CHAPTER4-3' },
+            { line: 31394, label: 'CHAPTER4-4' },
+            { line: 31826, label: 'CHAPTER4-5' },
+            { line: 31998, label: 'CHAPTER4-6' },
+            { line: 32549, label: 'CHAPTER5-1' },
+            { line: 32835, label: 'CHAPTER5-2' },
+            { line: 33206, label: 'CHAPTER5-3' },
+            { line: 33646, label: 'CHAPTER5-4' },
+            { line: 34306, label: 'CHAPTER6-1' },
+            { line: 34422, label: 'CHAPTER6-2' },
+            { line: 34797, label: 'CHAPTER6-3' },
+            { line: 35008, label: 'CHAPTER6-4' },
+            { line: 35323, label: 'CHAPTER7-1' },
+            { line: 36773, label: 'CHAPTER7-2' },
+            { line: 37078, label: 'CHAPTER7-3' },
+            { line: 38213, label: 'CHAPTER7-4' },
+            { line: 38859, label: 'CHAPTER8-1' },
+            { line: 39603, label: 'CHAPTER8-2' },
+            { line: 40263, label: 'CHAPTER8-3' },
+            { line: 40353, label: 'CHAPTER9-1' }
+        ],
+        // 星河辉耶个人线章节
+        huiyeChapters: [
+            { line: 41411, label: 'CHAPTER4-1' },
+            { line: 41872, label: 'CHAPTER4-2' },
+            { line: 41959, label: 'CHAPTER4-3' },
+            { line: 42337, label: 'CHAPTER4-4' },
+            { line: 42472, label: 'CHAPTER4-5' },
+            { line: 42792, label: 'CHAPTER4-6' },
+            { line: 43047, label: 'CHAPTER4-7' },
+            { line: 43360, label: 'CHAPTER4-8' },
+            { line: 43506, label: 'CHAPTER4-9' },
+            { line: 43878, label: 'CHAPTER5-1' },
+            { line: 44191, label: 'CHAPTER5-2' },
+            { line: 44371, label: 'CHAPTER5-3' },
+            { line: 44637, label: 'CHAPTER5-4' },
+            { line: 44887, label: 'CHAPTER5-5' },
+            { line: 45238, label: 'CHAPTER5-6' },
+            { line: 45881, label: 'CHAPTER6-1' },
+            { line: 46055, label: 'CHAPTER6-2' },
+            { line: 46356, label: 'CHAPTER6-3' },
+            { line: 47008, label: 'CHAPTER6-4' },
+            { line: 47145, label: 'CHAPTER6-5' },
+            { line: 48160, label: 'CHAPTER6-6' },
+            { line: 48423, label: 'CHAPTER7-1' },
+            { line: 48764, label: 'CHAPTER7-2' },
+            { line: 49349, label: 'CHAPTER7-3' },
+            { line: 49430, label: 'CHAPTER8-1' },
+            { line: 49532, label: 'CHAPTER9-1' }
+        ],
+        // 高楯欧丽叶个人线章节
+        oliyeChapters: [
+            { line: 50193, label: 'CHAPTER4-1' },
+            { line: 50424, label: 'CHAPTER4-1' },      // 分支重复章节
+            { line: 50633, label: 'CHAPTER4-2' },
+            { line: 51034, label: 'CHAPTER4-3' },
+            { line: 51375, label: 'CHAPTER4-3' },      // 分支重复章节
+            { line: 51453, label: 'CHAPTER5-1' },
+            { line: 51485, label: 'CHAPTER5-2' },
+            { line: 51711, label: 'CHAPTER5-3' },
+            { line: 51836, label: 'CHAPTER5-4' },
+            { line: 52175, label: 'CHAPTER5-4' },      // 分支重复章节
+            { line: 52634, label: 'CHAPTER6-1' },
+            { line: 52997, label: 'CHAPTER6-2' },
+            { line: 53534, label: 'CHAPTER6-2' },      // 分支重复章节
+            { line: 54216, label: 'CHAPTER6-2' },      // 分支重复章节
+            { line: 54402, label: 'CHAPTER7-1' },
+            { line: 54749, label: 'CHAPTER7-1' },      // 分支重复章节
+            { line: 55018, label: 'CHAPTER7-1' },      // 分支重复章节
+            { line: 55083, label: 'CHAPTER7-2' },
+            { line: 55187, label: 'CHAPTER7-2' },      // 分支重复章节
+            { line: 55336, label: 'CHAPTER7-2' },      // 分支重复章节
+            { line: 55769, label: 'CHAPTER7-2' },      // 分支重复章节
+            { line: 55839, label: 'CHAPTER7-3' },
+            { line: 55951, label: 'CHAPTER8-1' }
+        ],
+        // 百里风实花个人线章节
+        fengshihuaChapters: [
+            { line: 56475, label: 'CHAPTER4-1' },
+            { line: 57247, label: 'CHAPTER4-2' },
+            { line: 57569, label: 'CHAPTER4-3' },
+            { line: 58023, label: 'CHAPTER4-4' },
+            { line: 58257, label: 'CHAPTER4-5' },
+            { line: 58685, label: 'CHAPTER4-6' },
+            { line: 58955, label: 'CHAPTER5-1' },
+            { line: 59121, label: 'CHAPTER5-2' },
+            { line: 59948, label: 'CHAPTER5-3' },
+            { line: 60728, label: 'CHAPTER5-3' },      // 分支重复章节
+            { line: 60805, label: 'CHAPTER6-1' },
+            { line: 60873, label: 'CHAPTER6-2' },
+            { line: 61426, label: 'CHAPTER6-3' }
+        ]
+    }, 
+    loadStart(a){
+        storage.set({
+          key: 'readProgress',
+          value: JSON.stringify(a),
+          success: () => console.log('进度设置成功'),
+          fail: (error) => console.error('进度设置失败:', error)
+        });
+        router.push({
+          uri:'pages/detail'
+        })
+    },
+    back(){ 
+        router.back({
+            uri:'pages/more',
+        }) 
+    }, 
+    last() { 
+        if (this.page > 1) {
+            this.page -= 1;
+        } else {
+            this.page = 7;
+        }
+    },
+    enter() { 
+        if (this.page < 7) {
+            this.page += 1;
+        } else {
+            this.page = 1;
+        }
+    },
+}; 
+</script> 
+
+<style> 
+.page { 
+    background-color: #bbbbbb; 
+    flex-direction: column; 
+    justify-content: flex-start; 
+    align-items: center; 
+} 
+.page1 { 
+    background-color: #ffffff00; 
+    flex-direction: column; 
+    justify-content: flex-start; 
+    align-items: center; 
+    padding:10px;
+} 
+.bcg{
+    position: absolute;
+    width: 336px;
+    height: 480px;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+.mid {
+    font-size: 24px;
+    color: #000;
+    background-color: rgba(255, 255, 255, 0.726);
+    width: 250px;
+    border-radius: 15px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    text-align: center;
+}
+.mid1{
+  font-size: 35px;
+  color: #ffffff;
+  font-weight: 800;
+}
+.mid2{
+  font-size: 35px;
+  color: rgba(255, 255, 255, 0.726);
+  font-weight: 800;
+}
+.bt{
+    position: absolute;
+    bottom: 0;
+}
+.hd{
+    position: absolute;
+    top: 0;
+}
+.header {
+    position: absolute;
+    top:0px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 20px;
+}
+.scroll{
+    background-color: #ffffff00; 
+    flex-direction: column; 
+    justify-content: flex-start; 
+    align-items: center; 
+    flex:1;
+}
+.title { 
+    font-size: 36px;
+    color: #ebebeb;
+    font-weight: bold;
+} 
+.title1 { 
+    bottom: 5px;
+    position: absolute;
+    font-size: 22px;
+    color: #757575;
+    font-weight: bold;
+} 
+.back-btn { 
+    position:absolute;
+    left:15px;
+    top: 15px;
+} 
+.last-btn {
+    position: absolute;
+    left: 15px;
+    bottom: 15px;
+}
+.enter-btn {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+}
+.content {
+    flex-direction: column;
+    align-items: center;
+}
+.content1{
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.315);
+    border-radius: 15px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    margin-top:75px;
+    margin-bottom:15px;
+}
+</style>

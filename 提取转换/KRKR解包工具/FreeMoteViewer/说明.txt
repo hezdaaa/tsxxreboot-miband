@@ -1,0 +1,4 @@
+在使用KrKrDumper拆包时遇到的.pimg文件为多个cg的集合，还包括了规则文件，例如ev101a.pimg（yuzusoft）
+单独分离目录后拖到本文件夹的PsbDecompile.exe进行拆分。分离出底图和表情差分。根据b站工具自动整合。
+sd同样可以使用此工具
+使用e-mote技术的该工具可以处理/查看

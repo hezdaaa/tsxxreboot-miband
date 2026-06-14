@@ -1,0 +1,61 @@
+{
+  "package": "hezdaaa.tsxx.miband",
+  "name": "天使☆嚣嚣 re-boot! ",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "minPlatformVersion": 1000,
+  "icon": "/common/logo.png",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [	
+	{
+		"name": "system.app"
+	},
+	{
+		"name": "system.router"
+	},
+	{
+		"name": "system.storage"
+	},
+	{
+		"name": "system.brightness"
+	},
+	{
+		"name": "system.file"
+	},
+	{
+		"name": "system.prompt"
+	}
+],
+  "config": {
+    "logLevel": "log",
+    "designWidth": "device-width"
+  },
+  "router": {
+    "entry": "pages/index",
+    "pages": {
+	"pages/index": {
+		"component": "index"
+	},
+	"pages/detail": {
+		"component": "detail"
+	},
+	"pages/about": {
+		"component": "about"
+	},
+	"pages/settings": {
+		"component": "settings"
+	},
+	"pages/more": {
+		"component": "more"
+	},
+	"pages/cgs": {
+		"component": "cgs"
+	},
+	"pages/lct": {
+		"component": "lct"
+	}
+}
+  }
+}

@@ -1,0 +1,29 @@
+
+[关于以krkr为引擎的galgame解包经验分享 - 哔哩哔哩](https://www.bilibili.com/opus/885261397615706131)
+
+[Kirikiri引擎通用拆包方法 - 哔哩哔哩](https://www.bilibili.com/opus/864999816367702054)
+
+[Krkr引擎工具合集（二）——脚本、编码、文字 - 哔哩哔哩](https://www.bilibili.com/opus/748992517956960297)
+
+https://zimingyuan.github.io/html/krkr%E5%BC%95%E6%93%8E%E8%A7%A3%E5%8C%85%E5%B7%A5%E5%85%B7%E4%BB%8B%E7%BB%8D.html
+
+[Krkr引擎工具合集（一）——解包封包 - 哔哩哔哩](https://www.bilibili.com/opus/746093964791119991)
+
+[GAL解包的那些事儿 - 哔哩哔哩](https://www.bilibili.com/opus/952945950435835913) 
+
+[《天使騒々RE-BOOT!》解包及CG、立绘合成浅谈 - 哔哩哔哩](https://www.bilibili.com/opus/791058256610984007)
+
+[站在前人的肩膀上对柚子社新作《Limelight Lemonade Jam》进行CG以及立绘合成 - 哔哩哔哩](https://www.bilibili.com/opus/1118323047690928132)
+
+[我找到了HF的DR立绘解包方法 来自github大佬(极简版) - 鲲 Galgame 论坛 🐳 开源 Galgame 网站](https://www.kungal.com/topic/3441)
+
+[GitHub - 2778995958/gal_tachie_ai: 只是用ai寫合拼生成立繪的紀錄 · GitHub](https://github.com/2778995958/gal_tachie_ai)
+
+https://github.com/YeLikesss/KrkrPbdStandViewer
+
+https://github.com/YeLikesss/KrkrExtractForCxdecV2
+
+最后特别感谢一下 https://977958.xyz/ 的站主芹香serika和゚゚゚bilibili的松坂砂糖 ，芹香serika为我提供了体验版文件以便验证体验版立绘规则文件可被用于正式版立绘的合成，゚゚゚松坂砂糖提供了pbd2json工具。
+
+
+

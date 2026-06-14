@@ -1,0 +1,18 @@
+工具名                   链接                                                                                                        平台与作者
+AutoCGAligner     https://github.com/CjangCjengh/AutoCGAligner/releases/                   哔哩哔哩 猫与鸟_
+FreeMoteViewer   https://github.com/UlyssesWu/FreeMote/releases                                github UlyssesWu
+GARbro                https://github.com/morkt/GARbro                                                        github morkt
+KrKrDump            https://github.com/nanami5270/KrkrDump                                           github nanami5270
+KrkrExtract.Lite    https://github.com/xmoezzz/KrkrExtract                                                github xmoezzz
+KrkrExtract           同上                                                                                                         同上
+krkrFgiEditor        https://github.com/CjangCjengh/krkrFgiEditor/releases                        哔哩哔哩 猫与鸟_
+XP3Viewer            搜索未知                                                                                                  搜索未知
+KrkrExtractForCxdecV2  https://github.com/YeLikesss/KrkrExtractForCxdecV2                 github YeLikesss
+hxv4_deobf_tools https://github.com/MLChinoo/hxv4_deobf_tools                                   github MLChinoo
+hxv4简化脚本        https://github.com/2778995958/gal_tachie_ai/blob/main/krkr/auto_deobf.py github 2778995958
+KrkrPbdStandViewer https://github.com/YeLikesss/KrkrPbdStandViewer                          github YeLikesss
+剧本处理的原始脚本过于久远，github仓库搜不到代码了
+---
+关于pbd2json
+原作者界面丢失。实际上hxv4_deobf_tools已经内置。pbd2json原链接 https://github.com/TUdHQQ/pbd2json/releases  
+二次分发来源 https://www.bilibili.com/opus/1118323047690928132

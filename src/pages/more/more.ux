@@ -1,0 +1,359 @@
+<template> 
+    <div class="page"> 
+        <img class="bcg" src="/common/bcgi/空_夕.jpg"></img> 
+        <img class="bt" src="/common/bt.png"></img> 
+        <img class="hd" src="/common/hd.png"></img> 
+        
+        <scroll id="mainScroll" class="scroll" scroll-y="{{true}}" if="{{!showAS}}">
+            <div class="header">
+                <text class="title">更多</text> 
+            </div>
+            <div class="content" onclick="lctruote">
+                <text class="mid">流程图</text>
+            </div>
+            <div class="content" onclick="cgruote">
+                <text class="mid">鉴赏模式</text>
+            </div>
+            <div class="content" onclick="afterstoryshow">
+                <text class="mid">后日谈</text>
+            </div>
+        </scroll>
+        
+        <div class="page1" if="{{showAS}}">
+            <img class="bcg" src="/common/bcgi/空_夕.jpg"></img> 
+            <img class="bt" src="/common/bt.png"></img> 
+            <img class="hd" src="/common/hd.png"></img> 
+            <!-- 乃爱后日谈 -->
+            <div class="page2" if="{{character==1}}">
+                <image class="cig" src="/common/cimg/na01_1.png"></image>
+                <div class="header">
+                    <text class="title">后日谈</text> 
+                </div>
+                <text class="mid1">乃爱</text>
+                <div class="startBtn">
+                    <text class="startText" onclick="loadStart(1)">开始</text>
+                </div>
+            </div>
+            
+            <!-- 天音后日谈 -->
+            <div class="page2" if="{{character==2}}">
+                <image class="cig" src="/common/cimg/ty01_1.png"></image>
+                <div class="header">
+                    <text class="title">后日谈</text> 
+                </div>
+                <text class="mid1">天音</text>
+                <div class="startBtn">
+                    <text class="startText" onclick="loadStart(1)">开始</text>
+                </div>
+            </div>
+            
+            <!-- 来海后日谈 -->
+            <div class="page2" if="{{character==3}}">
+                <image class="cig" src="/common/cimg/lh01_1.png"></image>
+                <div class="header">
+                    <text class="title">后日谈</text> 
+                </div>
+                <text class="mid1">来海</text>
+                <div class="startBtn">
+                    <text class="startText" onclick="loadStart(1)">开始</text>
+                </div>
+            </div>
+            
+            <!-- 辉耶后日谈 -->
+            <div class="page2" if="{{character==4}}">
+                <image class="cig" src="/common/cimg/hy01_1.png"></image>
+                <div class="header">
+                    <text class="title">后日谈</text> 
+                </div>
+                <text class="mid1">辉耶</text>
+                <div class="startBtn">
+                    <text class="startText" onclick="loadStart(1)">开始</text>
+                </div>
+            </div>
+            
+            <!-- 欧丽叶后日谈 -->
+            <div class="page2" if="{{character==5}}">
+                <image class="cig" src="/common/cimg/oly01_1.png"></image>
+                <div class="header">
+                    <text class="title">后日谈</text> 
+                </div>
+                <text class="mid1">欧丽叶</text>
+                <div class="startBtn">
+                    <text class="startText" onclick="loadStart(1)">开始</text>
+                </div>
+            </div>
+            
+            <!-- 风实花后日谈 -->
+            <div class="page2" if="{{character==6}}">
+                <image class="cig" src="/common/cimg/fsh01_1.png"></image>
+                <div class="header">
+                    <text class="title">后日谈</text> 
+                </div>
+                <text class="mid1">风实花</text>
+                <div class="startBtn">
+                    <text class="startText" onclick="loadStart(1)">开始</text>
+                </div>
+            </div>
+            
+            <!-- 导航按钮 -->
+            <img class="last-btn" src="/common/back.png" onclick="last"></img> 
+            <img class="enter-btn" src="/common/go.png" onclick="enter"></img> 
+        </div>
+        
+        <!-- 返回按钮 -->
+        <img class="back-btn" src="/common/back.png" onclick="back"></img> 
+    </div> 
+</template> 
+
+<script> 
+import storage from '@system.storage'
+import router from '@system.router' 
+
+export default { 
+    data: { 
+        showAS: false, 
+        character: 1,
+    }, 
+    
+    // 上一个角色
+    last() { 
+        if (this.character > 1) {
+            this.character -= 1;
+        } else if (this.character == 1) {
+            this.character = 6;
+        }
+    },
+    
+    // 下一个角色
+    enter() { 
+        if (this.character < 6) {
+            this.character += 1;
+        } else if (this.character == 6) {
+            this.character = 1;
+        }
+    },
+    
+    // 返回逻辑
+    back() { 
+        if (!this.showAS) {
+            router.back({ 
+                uri: 'pages/index', 
+            });
+        } else {
+            this.showAS = false;
+        }
+    }, 
+    
+    // 跳转到流程图页面
+    lctruote() {
+        router.push({
+            uri: 'pages/lct',
+        });
+    },
+    
+    // 跳转到CG鉴赏页面
+    cgruote() {
+        router.push({
+            uri: 'pages/cgs',
+        });
+    },
+    
+    // 显示后日谈选择界面
+    afterstoryshow() {
+        this.showAS = true;
+    },
+    
+    // 开始后日谈（需要实现具体逻辑）
+
+    loadStart(a){
+    storage.set({
+      key: 'readProgress',
+      value: JSON.stringify(a),
+      success: () => console.log('进度设置成功'),
+      fail: (error) => console.error('进度设置失败:', error)
+    });
+    router.replace({
+      uri:'pages/detail'
+    })
+  },
+}; 
+</script> 
+
+<style> 
+/* 页面基础样式 */
+.page { 
+    background-color: #bbbbbb; 
+    flex-direction: column; 
+    justify-content: flex-start; 
+    align-items: center; 
+    width: 336px;
+    height: 480px;
+    position: relative;
+}
+
+/* 后日谈页面容器 */
+.page1 { 
+    background-color: #bbbbbb; 
+    flex-direction: column; 
+    justify-content: flex-start; 
+    align-items: center; 
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 后日谈单个角色页面 */
+.page2 { 
+    flex-direction: column; 
+    justify-content: flex-start; 
+    align-items: center; 
+    width: 336px;
+    height: 480px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* 背景图片 */
+.bcg {
+    position: absolute;
+    width: 336px;
+    height: 480px;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    object-fit: cover;
+}
+
+/* 角色图片 */
+.cig {
+    position: absolute;
+    top: 30px;
+    left: 20px;
+    z-index: -1;
+}
+
+/* 底部装饰 */
+.bt {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    z-index: 1;
+}
+
+/* 顶部装饰 */
+.hd {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+}
+
+/* 滚动区域 */
+.scroll {
+    height: 400px;
+    text-align: left;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    z-index: 0;
+    flex: 1;
+    width: 90%;
+    margin-top: 20px;
+}
+
+/* 头部标题 */
+.header {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+/* 主标题样式 */
+.title { 
+    font-size: 36px;
+    color: #ebebeb;
+    font-weight: bold;
+} 
+
+/* 后日谈页面标题样式 */
+
+
+/* 内容区域 */
+.content {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.726);
+    border-radius: 15px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    margin:15px;
+}
+/* 中部文字 */
+.mid{
+  font-size: 35px;
+  color: #000;
+  font-weight: 800;
+}
+.mid1{
+  text-align: center; /* 文本水平居中 */
+  display: flex; /* 使文字垂直居中 */
+    width: 336px;
+    background-color: #f1dd28;
+  font-size: 45px;
+  color: #250c4d;
+  font-weight: 800;
+  position: absolute;
+  bottom: 100px;
+}
+
+/* 开始按钮 */
+.startBtn {
+    position: absolute;
+    bottom: 15px;
+    margin-top: 60px;
+    padding: 15px 40px;
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 30px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.startText {
+    font-size: 28px;
+    color: #333;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+/* 按钮激活效果 */
+
+
+/* 导航按钮 */
+.last-btn {
+    position: absolute;
+    left: 15px;
+    bottom: 15px;
+}
+
+.enter-btn {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+}
+
+
+/* 返回按钮 */
+.back-btn { 
+    position: absolute;
+    left: 15px;
+    top: 15px;
+}
+
+
+/* 角色页面遮罩效果 */
+</style>

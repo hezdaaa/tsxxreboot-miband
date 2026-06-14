@@ -1,0 +1,1888 @@
+<template>
+  <div class="page" @swipe="pageSwipe" onlongpress="displayPage" onclick="playPage">
+    
+    <!-- 当前背景，缩放类绑定 -->
+    <image class="backgroundimg {{currentBackgroundScaleClass}}" 
+           src="{{currentBackground}}"
+           onerror="onImageError('background', currentBackground)"></image>
+    <!-- 下一张背景 -->
+    <image class="backgroundimg next-background {{nextBackgroundScaleClass}}" 
+           src="{{nextBackground}}" if="{{showNextBackground}}"
+           onerror="onImageError('nextBackground', nextBackground)"></image>
+  
+    <!-- 当前CG图层 -->
+    <image class="cgimg" src="{{cgimg}}" if="{{cgimg}}"
+           onerror="onImageError('cg', cgimg)"></image>
+    <!-- 下一张CG -->
+    <image class="cgimg next-cg" src="{{nextCg}}" if="{{showNextCg}}"
+           onerror="onImageError('nextCg', nextCg)"></image>
+    
+    <!-- 立绘图层，缩放类绑定 -->
+    <div class="character-container" if="{{characterimg}}">
+      <image class="characterimg {{currentCharacterScaleClass}}" 
+             src="{{characterimg}}"
+             onerror="onImageError('character', characterimg)"></image>
+    </div>
+    <!-- 下一张立绘 -->
+    <div class="character-container" if="{{nextCharacterImg && showNextCharacter}}">
+      <image class="characterimg next-character {{nextCharacterScaleClass}}" 
+             src="{{nextCharacterImg}}"
+             onerror="onImageError('nextCharacter', nextCharacterImg)"></image>
+    </div>
+
+    <!-- 对话框（结局时隐藏） -->
+    <image class="board" src="board.png" onclick="nextPage" if="{{pageShow === true && !hideText && !isEnding}}"></image>
+
+    <!-- 角色名（结局时隐藏） -->
+    <text class="character" style=" color: {{viewed ? readColor : unreadColor}}; font-weight: {{boldText ? 'bold' : 'normal'}};" if="{{pageShow === true && !hideText && !isEnding}}">{{displayCharacter}}</text>
+
+    <!-- 文本内容（结局时隐藏） -->
+    <scroll id="Scroll" class="scroll2" onclick="nextPage" scroll-y="{{true}}" bounces="{{true}}" if="{{!isEnding}}">
+      <text class="contect" 
+        style="color: {{viewed ? readColor : unreadColor}}; font-size: {{currentTextFontSize}}px; font-weight: {{boldText ? 'bold' : 'normal'}};" 
+        if="{{pageShow === true && !hideText}}">
+        {{displayText}}
+      </text>
+    </scroll>
+    
+    <!-- 黑色遮罩层（用于背景切换动画） -->
+    <div class="background-mask" style="background-color: {{maskColor}};" if="{{isAnimating}}"></div>
+    
+    <!-- 闪光弹白色遮罩层（最高优先级） -->
+    <div class="flashbang-mask" if="{{showFlashbang}}" onclick="nextPage" style="opacity: {{flashbangOpacity}};"></div>
+      
+    <!-- 控制按钮（结局时隐藏） -->
+    <div class="skip-btn2" if="{{isAutoing && !contrlcenterShow && !isAnimating && !isEnding}}" onclick="stopAutoplay">
+      <text>停止自动播放</text>
+    </div>
+    <div class="skip-btn3" if="{{isGoing && !contrlcenterShow && !isAnimating && !isEnding}}" onclick="stopQuickGo">
+      <text>停止快进</text>
+    </div>
+    <div class="skip-btn4" if="{{isBacking && !contrlcenterShow && !isAnimating && !isEnding}}" onclick="stopQuickBack">
+      <text>停止快退</text>
+    </div>
+    
+    <!-- 选择选项（结局时隐藏） -->
+    <div class="choose" if="{{choose && pageShow === true && !isAnimating && !isEnding}}">
+      <text class="choosetext" onclick="choose1c" if="{{choose1Visible}}" style="color: {{choose1Color}};">{{choose1}}</text>
+      <text class="choosetext" onclick="choose2c" if="{{choose2Visible}}" style="color: {{choose2Color}};">{{choose2}}</text>
+      <text class="choosetext" onclick="choose3c" if="{{choose3Visible}}" style="color: {{choose3Color}};">{{choose3}}</text>
+      <text class="choosetext" onclick="choose4c" if="{{choose4Visible}}" style="color: {{choose4Color}};">{{choose4}}</text>
+      <!-- 第五个选项 -->
+      <text class="choosetext" onclick="choose5c" if="{{choose5Visible}}" style="color: {{choose5Color}};">{{choose5}}</text>
+    </div>
+    
+    <!-- 控制中心（结局时隐藏） -->
+    <div class="page1" if="{{contrlcenterShow && !isAnimating && !isEnding}}" @swipe="controlCenterSwipe">
+      <scroll id="mainScroll" class="scroll" scroll-y="{{true}}" bounces="{{true}}">
+        <text class="load2">{{nowTime}} | {{readProgress}}</text>
+        <text class="load" onclick="hidecontrlcenter">返回</text>
+        <text class="load" onclick="saveconShow">保存</text>
+        <text class="load" onclick="loadconShow">加载</text>
+        <text class="load" onclick="quickSave">快速存档</text>
+        <text class="load" onclick="loadStart(1)">快速读档</text>
+        <text class="load" onclick="indexRoute">返回主页</text>
+        <text class="load" onclick="settingsRoute">设置</text>
+        <text class="load" onclick="lctRoute">流程图</text>
+        <text class="load" onclick="autoplay" if="{{isBacking === false && isGoing === false}}">{{isAutoing ? '停止自动播放' : '自动播放'}}</text>
+        <text class="load" onclick="quickgo" if="{{isBacking === false && isAutoing === false}}">{{isGoing ? '停止快进' : '快进'}}</text>
+        <text class="load" onclick="quickback" if="{{isAutoing === false && isGoing === false}}">{{isBacking ? '停止快退' : '快退'}}</text>
+        <text class="load2"></text>
+      </scroll>
+    </div>
+
+    <!-- 读档页面 -->
+    <div class="page1" if="{{loadShow && !isAnimating && !isEnding}}" @swipe="loadSaveSwipe">
+      <text class="load3" onclick="loadconShow">点击跳转至对应页面</text>
+      <scroll id="loadScroll" class="scroll" scroll-y="{{true}}" bounces="{{true}}">
+        <div class="save-item" for="{{(index, item) in saveSlots}}" onclick="loadSlot(index + 1)">
+          <text class="load">存档{{index + 1}}: {{item.text}}</text>
+        </div>
+        <text class="load2"></text>
+      </scroll>
+    </div>
+
+    <!-- 存档页面 -->
+    <div class="page1" if="{{saveShow && !isAnimating && !isEnding}}" @swipe="loadSaveSwipe">
+      <text class="load3" onclick="saveconShow">长按删除存档位</text>
+      <scroll id="saveScroll" class="scroll" scroll-y="{{true}}" bounces="{{true}}">
+        <div class="save-item" for="{{(index, item) in saveSlots}}">
+          <text class="load" onlongpress="deleteSlot(index + 1)" onclick="saveToSlot(index + 1)">存档{{index + 1}}: {{item.text}}</text>
+        </div>
+        <div class="save-add" onclick="addSaveSlot">
+          <text class="load">[ + 添加存档位 ]</text>
+        </div>
+        <text class="load2"></text>
+      </scroll>
+    </div>
+
+    <!-- 结局画面覆盖层 -->
+    <div class="end-overlay" if="{{isEnding && endAnimationDone}}" onclick="endClickReturn">
+      <text class="end-text">{{endText}}</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import prompt from '@system.prompt'
+import brightness from '@system.brightness' 
+import storage from '@system.storage' 
+import router from '@system.router' 
+import GameEngine from './gameEngine.js'
+
+export default { 
+  data: { 
+    unreadColor: '#ffffff',
+    readColor: '#d495d4',
+    fontSize: 22,
+    currentTextFontSize: 22,
+    textSpeed: 25,
+    screenAlwaysOn: true,
+    boldText: false,
+    skipOnlyRead: false,
+    autoPlayDelay: 2000,
+    pageShow:true,
+    viewed:false,
+    readProgress: 1, 
+    // 存档数据
+    saveSlots: [
+      { id: 1, text: "空", progress: 1 },
+      { id: 2, text: "空", progress: 1 },
+      { id: 3, text: "空", progress: 1 },
+      { id: 4, text: "空", progress: 1 },
+      { id: 5, text: "空", progress: 1 }
+    ],
+    maxSaveSlots: 100,
+    
+    loadShow: false, 
+    saveShow: false, 
+    contrlcenterShow: false,
+    
+    // 图片资源
+    currentBackground: "/common/bcgi/異世界_前景a.jpg",
+    nextBackground: "",
+    showNextBackground: false,
+    characterimg: "", 
+    cgimg: "",
+    nextCg: "",
+    showNextCg: false,
+    
+    // 下一张立绘数据
+    nextCharacterImg: "",
+    showNextCharacter: false,
+    
+    // 缩放类名
+    currentBackgroundScaleClass: 'bg-scale-1',
+    currentCharacterScaleClass: 'character-scale-1',
+    nextBackgroundScaleClass: '',
+    nextCharacterScaleClass: '',
+    
+    // 游戏引擎
+    character: " ", 
+    displayCharacter: " ",
+    contect: "",
+    displayText: "......加载中......",
+    gameEngine: null,
+    
+    // 播放控制
+    isAutoing:false,
+    isTyping: false,
+    typewriterTimer: null,
+    currentTextIndex: 0,
+    autoPlayTimer: null,
+    
+    // 选择系统（扩展为5个选项）
+    choose1:"选项一",
+    choose2:"选项二",
+    choose3:"选项三",
+    choose4:"选项四",
+    choose5:"选项五",
+    choose1Visible: true,
+    choose2Visible: true,
+    choose3Visible: true,
+    choose4Visible: true,
+    choose5Visible: true,
+    choose1To:1,
+    choose2To:1,
+    choose3To:1,
+    choose4To:1,
+    choose5To:1,
+    choose:false,
+    
+    // 时间显示
+    nowTime: "00:00",
+    timeTimer: null,
+    
+    // 快进快退
+    isGoing: false,
+    isBacking: false,
+    goTimer: null,
+    backTimer: null,
+    quickSpeed: 50,
+    
+    // 背景切换动画相关
+    isAnimating: false,
+    hideText: false,
+    maskColor: "rgba(0, 0, 0, 0.0)",
+    animationTimer: null,
+    animationStep: 0,
+    animatingProgressId: null,
+    
+    // 已读页面分块存储相关
+    readBlocks: {},
+    currentBlockIndex: 0,
+    blockSize: 500,
+    preloadDistance: 10,
+    isBlockLoading: false,
+    blockLoadingQueue: [],
+    
+    // 块边界保存相关
+    pendingSaves: {},
+    saveThreshold: 10,
+    
+    // 分支跳转配置
+    branchConfig: {
+      noNextPages: {
+        3143:3386,
+        3294:3386,
+        3622:3664,
+        5308:5407,
+        6219:6257,
+        8080:8243,
+        8578:8589,
+        9103:9128,
+        9115:9128,
+        9122:9128,
+        9109:9128,
+        9231:9265,
+        9392:9393,
+        56474:9393,
+        10704:9995,
+        9963:9995,
+        9763:9995,
+        9971:9995,
+      },
+      noBackPages: {
+        10072:2029,
+        3386:3386,
+        3144:2963,
+        3295:2963,
+        3623:3612,
+        3664:3664,
+        5407:5407,
+        5389:5248,
+        6257:6257,
+        6220:6002,
+        8081:7930,
+        8234:8234,
+        8579:8391,
+        8589:8589,
+        9110:9096,
+        9116:9096,
+        9123:9096,
+        9104:9096,
+        9128:9128,
+        9207:9207,
+        9232:9205,
+        9206:9204,
+        9265:9265,
+        9354:9341,
+        9393:9393,
+        56458:9341,
+        10561:9401,
+        9634:9441,
+        9764:9441,
+        9972:9884,
+        9995:9995,
+        10705:10053,
+        20228:10044,
+        30231:10053,
+        41411:10053,
+        50194:10053,
+        56475:10053,
+        17923:17695,
+      },
+      hiddenPages: {
+        9204: (choices) => {
+          if (choices[3612] === 2) return 9205;
+          if (choices[3612] === 1) return 9206;
+        },
+        9341: (choices) => {
+          if(
+             choices[2029] === 2 &&
+             choices[3612] === 2 &&
+             choices[5248] === 2 &&
+             choices[7930] === 2 &&
+             choices[8391] === 2 &&
+             choices[9096] === 5 &&
+             choices[9205] === 2) return 9354;
+          else if(
+             choices[2029] === 2 &&
+             choices[2963] === 3 &&
+             choices[5248] === 2 &&
+             choices[8391] === 1) return 56458;
+          else return 9393;
+        },
+        9401: (choices) => {
+          if (
+             choices[2029] === 2 &&
+             choices[3612] === 2 &&
+             choices[5248] === 2 &&
+             choices[7930] === 2 &&
+             choices[8391] === 2 &&
+             choices[9096] === 5 &&
+             choices[9205] === 2) return 10561;
+          else return 9402;
+        },
+        10043: (choices) => {
+          if(
+             choices[2029] === 2 &&
+             choices[3612] === 2 &&
+             choices[5248] === 2 &&
+             choices[7930] === 2 &&
+             choices[8391] === 2 &&
+             choices[9096] === 5 &&
+             choices[9205] === 2) return 20228;
+          else return 10044;
+        },
+        10053: (choices) => {
+          if (
+             choices[2029] === 2 &&
+             choices[2963] === 1 &&
+             choices[3612] === 0 &&
+             choices[5248] === 1 &&
+             choices[8391] === 2 &&
+             choices[9096] === 1) return 10705;
+          if(
+             choices[2029] === 2 &&
+             choices[3612] === 2 &&
+             choices[5248] === 2 &&
+             choices[6062] === 1 &&
+             choices[8391] === 2 &&
+             choices[9096] === 2 &&
+             choices[9205] === 1 &&
+             choices[9441] === 2) return 30231;
+          if(
+             choices[2029] === 2 &&
+             choices[5248] === 2 &&
+             choices[7930] === 1 &&
+             choices[8391] === 2 &&
+             choices[9096] === 3 &&
+             choices[9441] === 1) return 41411;
+          if(
+             choices[2029] === 2 &&
+             choices[5248] === 2 &&
+             choices[8391] === 2 &&
+             choices[9096] === 4 &&
+             choices[9441] === 3 &&
+             choices[9884] === 1) return 50194;
+          if(
+             choices[2029] === 2 &&
+             choices[2963] === 3 &&
+             choices[5248] === 2 &&
+             choices[8391] === 1) return 56475;
+          else return 10054;
+        },
+      },
+      choices: {
+      },
+      end: {
+        10559:"BAD END",
+        17922:"BAD END",
+        19583:"Noa end",
+        29606:"Amane end",
+        40352:"Kurumi end",
+        49531:"Kaguya end",
+        55950:"Orie end",
+        60804:"Fumika end",
+        20226:"回到主页",
+        30230:"回到主页",
+        41410:"回到主页",
+        50192:"回到主页",
+        56456:"回到主页",
+        61436:"回到主页",
+
+      }
+    },
+    
+    // 控制中心滚动/触摸检测状态
+    mainScrollStartY: 0,
+    mainTouchMovedY: 0, 
+    mainScrollAtBottom: false,
+    hideOnUpThreshold: -380,
+    
+    // 加载状态
+    isLoadingScript: false,
+    isGameEngineLoaded: false,
+    
+    // 当前页面ID
+    currentPageId: 1,
+    
+    // 选择选项颜色（扩展第五个）
+    choose1Color: '#ffffff',
+    choose2Color: '#ffffff',
+    choose3Color: '#ffffff',
+    choose4Color: '#ffffff',
+    choose5Color: '#ffffff',
+    
+    // 快进快退页面缓存
+    quickNavigationCache: {},
+    quickCacheSize: 30,
+    quickNavigationQueue: [],
+    
+    // 避免频繁滚动
+    lastScrollTime: 0,
+    scrollThrottleDelay: 200,
+    
+    // 进度保存相关
+    lastSavedProgress: 1,
+    progressSaveDelay: 500,
+    progressSaveTimer: null,
+    
+    // 图片内存管理系统
+    imageCache: {},
+    maxImageCacheSize: 8,
+    currentImageKeys: [],
+    isPreloadingImages: false,
+    imageMemoryUsage: 0,
+    maxImageMemory: 15 * 1024 * 1024,
+    lastImageCleanup: 0,
+    imageCleanupInterval: 5000,
+    imageLoadSuccess: 0,
+    imageLoadFail: 0,
+    lowMemoryMode: false,
+    forceImageCleanupThreshold: 0.8,
+    
+    // 字体解析缓存
+    fontParseCache: {},
+    fontParseCacheOrder: [],
+    
+    // 结局相关状态
+    isEnding: false,
+    endText: "",
+    endAnimationDone: false,
+    
+    // 闪光弹相关数据
+    flashbangPages: [],          // 触发闪光弹的页面ID列表（可扩展）
+    showFlashbang: false,            // 是否显示闪光弹白色遮罩
+    flashbangOpacity: 1.0,           // 遮罩当前透明度
+    flashbangTimer: null,            // 闪光弹动画定时器
+    isFlashActive: false,            // 闪光弹是否正在进行中（用于禁止操作）
+    waitForFlashbang: false,
+  },
+  
+  // 解析文本字体大小（带缓存）
+  parseTextFontSize(text) {
+    if (!text) return { fontSize: this.fontSize, text: "" };
+    const cacheKey = text;
+    if (this.fontParseCache[cacheKey]) {
+      return this.fontParseCache[cacheKey];
+    }
+    let fontSize = this.fontSize;
+    let processedText = text;
+    const pattern = /^%(\d+)\s*(.*)/;
+    const match = text.match(pattern);
+    if (match) {
+      const percent = parseInt(match[1]);
+      fontSize = Math.max(10, Math.min(100, Math.floor(this.fontSize * percent / 100)));
+      processedText = match[2];
+    }
+    const result = { fontSize, text: processedText };
+    if (this.fontParseCacheOrder.length > 200) {
+      const oldestKey = this.fontParseCacheOrder.shift();
+      delete this.fontParseCache[oldestKey];
+    }
+    this.fontParseCache[cacheKey] = result;
+    this.fontParseCacheOrder.push(cacheKey);
+    return result;
+  },
+  
+  // 缩放类辅助方法
+  getCharacterScaleClass(z) {
+    if (z === 1) return 'character-scale-07';
+    if (z === 2) return 'character-scale-12';
+    return 'character-scale-1';
+  },
+  getBackgroundScaleClass(z) {
+    if (z === 2) return 'bg-scale-11';
+    return 'bg-scale-1';
+  },
+  
+  updateImageIfNeeded(target, newSrc, type) {
+    if (this[target] !== newSrc) {
+      this[target] = newSrc;
+      if (newSrc) this.addToImageCache(newSrc, type);
+      return true;
+    }
+    return false;
+  },
+  
+  // ---------- 图片内存管理系统 ----------
+  getImageKey(url) {
+    if (!url) return null;
+    const cleanUrl = url.split('?')[0];
+    const fileName = cleanUrl.split('/').pop();
+    return fileName || cleanUrl;
+  },
+  estimateImageSize(url) {
+    if (!url) return 0;
+    const isPNG = url.includes('.png');
+    const isJPG = url.includes('.jpg') || url.includes('.jpeg');
+    if (isPNG) return 50 * 1024;
+    if (isJPG) {
+      if (url.includes('bcgi')) return 30 * 1024;
+      if (url.includes('evig')) return 40 * 1024;
+      return 20 * 1024;
+    }
+    return 30 * 1024;
+  },
+  addToImageCache(url, imageType = 'unknown', isPreload = false) {
+    if (!url) return false;
+    const key = this.getImageKey(url);
+    if (!key) return false;
+    if (this.imageCache[key]) {
+      this.imageCache[key].lastUsed = Date.now();
+      this.imageCache[key].isPreload = isPreload;
+      return true;
+    }
+    const estimatedSize = this.estimateImageSize(url);
+    if (this.imageMemoryUsage + estimatedSize > this.maxImageMemory * 0.9) {
+      this.cleanupImagesByPriority(2);
+    }
+    this.imageCache[key] = {
+      url: url,
+      loaded: false,
+      lastUsed: Date.now(),
+      size: estimatedSize,
+      type: imageType,
+      isPreload: isPreload,
+      priority: this.getImagePriority(imageType, isPreload)
+    };
+    this.imageMemoryUsage += estimatedSize;
+    return true;
+  },
+  getImagePriority(imageType, isPreload) {
+    if (isPreload) return 1;
+    switch(imageType) {
+      case 'background': return 10;
+      case 'cg': return 8;
+      case 'character': return 6;
+      default: return 3;
+    }
+  },
+  markImageAsUsed(url, imageType) {
+    if (!url) return;
+    const key = this.getImageKey(url);
+    if (!key || !this.imageCache[key]) return;
+    this.imageCache[key].lastUsed = Date.now();
+    this.imageCache[key].priority = this.getImagePriority(imageType, false);
+    this.imageCache[key].isPreload = false;
+    this.addToCurrentImageList(key);
+    if (this.currentImageKeys.length > 4) {
+      const oldestKey = this.currentImageKeys.shift();
+      if (oldestKey && this.imageCache[oldestKey]) {
+        this.imageCache[oldestKey].priority = Math.max(1, this.imageCache[oldestKey].priority - 2);
+      }
+    }
+  },
+  addToCurrentImageList(key) {
+    const index = this.currentImageKeys.indexOf(key);
+    if (index !== -1) this.currentImageKeys.splice(index, 1);
+    this.currentImageKeys.push(key);
+  },
+  cleanupImagesByPriority(count = 1) {
+    const now = Date.now();
+    if (now - this.lastImageCleanup < this.imageCleanupInterval) return;
+    this.lastImageCleanup = now;
+    const candidates = Object.entries(this.imageCache)
+      .filter(([key, img]) => !this.currentImageKeys.includes(key) && (now - img.lastUsed > 5000));
+    if (candidates.length === 0) return;
+    candidates.sort((a, b) => {
+      if (a[1].priority !== b[1].priority) return a[1].priority - b[1].priority;
+      return a[1].lastUsed - b[1].lastUsed;
+    });
+    const toRemove = candidates.slice(0, Math.min(count, candidates.length));
+    let freedMemory = 0;
+    toRemove.forEach(([key, img]) => {
+      freedMemory += img.size || 0;
+      delete this.imageCache[key];
+    });
+    this.imageMemoryUsage = Math.max(0, this.imageMemoryUsage - freedMemory);
+    if (this.imageMemoryUsage > this.maxImageMemory * this.forceImageCleanupThreshold) this.forceCleanupExcessImages();
+  },
+  forceCleanupExcessImages() {
+    const overLimit = this.imageMemoryUsage - this.maxImageMemory * 0.8;
+    if (overLimit <= 0) return;
+    const needToFree = overLimit;
+    let freedMemory = 0;
+    const allCandidates = Object.entries(this.imageCache)
+      .filter(([key, img]) => !this.currentImageKeys.includes(key))
+      .sort((a, b) => (a[1].priority * 1000 + a[1].lastUsed) - (b[1].priority * 1000 + b[1].lastUsed));
+    for (const [key, img] of allCandidates) {
+      if (freedMemory >= needToFree) break;
+      freedMemory += img.size || 0;
+      delete this.imageCache[key];
+    }
+    this.imageMemoryUsage = Math.max(0, this.imageMemoryUsage - freedMemory);
+    if (freedMemory > 0) {
+      this.lowMemoryMode = true;
+    }
+  },
+  async smartPreloadImages(currentScript, progressId) {
+    if (!currentScript || !this.gameEngine) return;
+    if (this.imageMemoryUsage > this.maxImageMemory * 0.7) return;
+    const images = [];
+    if (currentScript.background) images.push({url: currentScript.background, type: 'background'});
+    if (currentScript.cg) images.push({url: currentScript.cg, type: 'cg'});
+    if (currentScript.character) images.push({url: currentScript.character, type: 'character'});
+    images.forEach(img => this.addToImageCache(img.url, img.type, true));
+    if (!this.isPreloadingImages && !this.lowMemoryMode) {
+      this.isPreloadingImages = true;
+      setTimeout(async () => {
+        try {
+          for (let i = 1; i <= 2; i++) {
+            const nextId = progressId + i;
+            const nextScript = await this.gameEngine.getScript(nextId);
+            if (nextScript) {
+              if (nextScript.background && nextScript.background !== currentScript.background) this.addToImageCache(nextScript.background, 'background', true);
+              if (nextScript.cg && nextScript.cg !== currentScript.cg) this.addToImageCache(nextScript.cg, 'cg', true);
+              if (nextScript.character && nextScript.character !== currentScript.character) this.addToImageCache(nextScript.character, 'character', true);
+            }
+            if (this.imageMemoryUsage > this.maxImageMemory * 0.6) break;
+          }
+        } catch (error) {} finally {
+          this.isPreloadingImages = false;
+        }
+      }, 300);
+    }
+  },
+  onImageLoad(type, url) {
+    this.imageLoadSuccess++;
+    const key = this.getImageKey(url);
+    if (key && this.imageCache[key]) this.imageCache[key].loaded = true;
+    this.markImageAsUsed(url, type);
+  },
+  onImageError(type, url) {
+    const key = this.getImageKey(url);
+    if (key && this.imageCache[key]) {
+      this.imageCache[key].failed = true;
+      this.imageCache[key].priority = -1;
+    }
+    switch (type) {
+      case 'background':
+        if (this.currentBackground === url) this.currentBackground = '';
+        break;
+      case 'nextBackground':
+        if (this.nextBackground === url) { this.nextBackground = ''; this.showNextBackground = false; }
+        break;
+      case 'cg':
+        if (this.cgimg === url) this.cgimg = '';
+        break;
+      case 'nextCg':
+        if (this.nextCg === url) { this.nextCg = ''; this.showNextCg = false; }
+        break;
+      case 'character':
+        if (this.characterimg === url) this.characterimg = '';
+        break;
+      case 'nextCharacter':
+        if (this.nextCharacterImg === url) { this.nextCharacterImg = ''; this.showNextCharacter = false; }
+        break;
+      default: break;
+    }
+  },
+  getImageCacheStatus() {
+    const total = Object.keys(this.imageCache).length;
+    const loaded = Object.values(this.imageCache).filter(img => img.loaded).length;
+    const preload = Object.values(this.imageCache).filter(img => img.isPreload).length;
+    const current = this.currentImageKeys.length;
+    return {
+      total, loaded, preload, current,
+      memory: `${Math.round(this.imageMemoryUsage/1024)}KB/${Math.round(this.maxImageMemory/1024)}KB`,
+      usage: Math.round((this.imageMemoryUsage / this.maxImageMemory) * 100),
+      success: this.imageLoadSuccess,
+      fail: this.imageLoadFail
+    };
+  },
+  
+  // 清理闪光弹效果
+  cleanupFlashbang() {
+    if (this.flashbangTimer) {
+      clearInterval(this.flashbangTimer);
+      this.flashbangTimer = null;
+    }
+    if (this.showFlashbang) {
+      this.showFlashbang = false;
+    }
+    this.isFlashActive = false;
+
+    // 闪光弹结束后，如果等待标志为 true，则显示文字
+    if (this.waitForFlashbang) {
+      this.startTypewriterAfterFlashbang();
+    }
+  },
+  startTypewriterAfterFlashbang() {
+    if (!this.waitForFlashbang) return;
+    this.waitForFlashbang = false;
+
+    this.displayCharacter = this.character;
+    this.displayText = "";
+    this.currentTextIndex = 0;
+    this.startTypewriter();
+  },
+  // 触发闪光弹效果（纯透明度渐变）
+  triggerFlashbang() {
+    // 防止重复触发
+    if (this.isFlashActive) {
+      this.cleanupFlashbang();
+    }
+    // 结局或动画中不触发
+    if (this.isEnding || this.isAnimating) return;
+
+    this.isFlashActive = true;
+
+    // 显示白色遮罩，起始不透明度 1
+    this.showFlashbang = true;
+    this.flashbangOpacity = 1;
+
+    let opacity = 1;
+    const step = 0.05;
+    const intervalMs = 20;
+
+    if (this.flashbangTimer) clearInterval(this.flashbangTimer);
+    this.flashbangTimer = setInterval(() => {
+      opacity -= step;
+      if (opacity <= 0) {
+        clearInterval(this.flashbangTimer);
+        this.flashbangTimer = null;
+        this.cleanupFlashbang();
+      } else {
+        this.flashbangOpacity = opacity;
+      }
+    }, intervalMs);
+  },
+  
+  // ---------- 已读块管理 ----------
+  getBlockIndex(pageId) { return Math.floor((pageId - 1) / this.blockSize); },
+  getBlockOffset(pageId) { return (pageId - 1) % this.blockSize; },
+  shouldSaveBlock(blockIndex, offset) { return offset <= this.saveThreshold || offset >= this.blockSize - this.saveThreshold; },
+  async loadBlock(blockIndex) {
+    if (this.readBlocks[blockIndex]) return true;
+    return new Promise((resolve) => {
+      storage.get({ key: `readBlock_${blockIndex}`, success: (data) => {
+          try {
+            if (data) this.readBlocks[blockIndex] = JSON.parse(data);
+            else this.readBlocks[blockIndex] = new Array(this.blockSize).fill(false);
+            resolve(true);
+          } catch(e) { this.readBlocks[blockIndex] = new Array(this.blockSize).fill(false); resolve(true); }
+        }, fail: () => { this.readBlocks[blockIndex] = new Array(this.blockSize).fill(false); resolve(true); }
+      });
+    });
+  },
+  markBlockForSave(blockIndex) {
+    if (!this.readBlocks[blockIndex]) return;
+    this.pendingSaves[blockIndex] = [...this.readBlocks[blockIndex]];
+  },
+  async savePendingBlocks() {
+    const pendingBlocks = Object.keys(this.pendingSaves);
+    if (pendingBlocks.length === 0) return;
+    const savePromises = [];
+    for (const blockIndex of pendingBlocks) {
+      const blockKey = `readBlock_${blockIndex}`;
+      const blockData = this.pendingSaves[blockIndex];
+      const promise = new Promise((resolve) => {
+        storage.set({ key: blockKey, value: JSON.stringify(blockData), success: () => { delete this.pendingSaves[blockIndex]; resolve(true); }, fail: () => resolve(false) });
+      });
+      savePromises.push(promise);
+    }
+    await Promise.all(savePromises);
+  },
+  async saveOnBlockTransition(newPageId) {
+    const newBlockIndex = this.getBlockIndex(newPageId);
+    const currentBlockIndex = this.currentBlockIndex;
+    if (newBlockIndex !== currentBlockIndex && this.readBlocks[currentBlockIndex]) {
+      this.markBlockForSave(currentBlockIndex);
+      await this.savePendingBlocks();
+    }
+    this.currentBlockIndex = newBlockIndex;
+  },
+  async preloadAdjacentBlocks(currentPageId) {
+    const currentBlock = this.getBlockIndex(currentPageId);
+    const offset = this.getBlockOffset(currentPageId);
+    if (offset >= this.blockSize - this.preloadDistance) {
+      const nextBlock = currentBlock + 1;
+      if (!this.readBlocks[nextBlock]) this.loadBlock(nextBlock);
+    }
+    if (offset <= this.preloadDistance && currentBlock > 0) {
+      const prevBlock = currentBlock - 1;
+      if (!this.readBlocks[prevBlock]) this.loadBlock(prevBlock);
+    }
+  },
+  smartCleanBlocks(currentPageId) {
+    const currentBlock = this.getBlockIndex(currentPageId);
+    const blocksToKeep = [currentBlock, currentBlock - 1, currentBlock + 1];
+    Object.keys(this.readBlocks).forEach(blockIndex => {
+      const index = parseInt(blockIndex);
+      if (!blocksToKeep.includes(index)) delete this.readBlocks[blockIndex];
+    });
+  },
+  async markPageAsRead(progressId) {
+    if (!progressId) return;
+    const blockIndex = this.getBlockIndex(progressId);
+    const offset = this.getBlockOffset(progressId);
+    if (!this.readBlocks[blockIndex]) await this.loadBlock(blockIndex);
+    if (!this.readBlocks[blockIndex][offset]) {
+      this.readBlocks[blockIndex][offset] = true;
+      if (this.shouldSaveBlock(blockIndex, offset)) this.markBlockForSave(blockIndex);
+      this.preloadAdjacentBlocks(progressId);
+      if (offset >= this.preloadDistance && offset <= this.blockSize - this.preloadDistance) this.smartCleanBlocks(progressId);
+    }
+  },
+  async isPageRead(progressId) {
+    if (!progressId) return false;
+    const blockIndex = this.getBlockIndex(progressId);
+    const offset = this.getBlockOffset(progressId);
+    if (this.readBlocks[blockIndex]) return this.readBlocks[blockIndex][offset] === true;
+    await this.loadBlock(blockIndex);
+    return this.readBlocks[blockIndex] && this.readBlocks[blockIndex][offset] === true;
+  },
+  async loadReadPages() {
+    return new Promise((resolve) => {
+      const currentBlock = this.getBlockIndex(this.readProgress);
+      this.currentBlockIndex = currentBlock;
+      const blocksToLoad = [currentBlock];
+      if (currentBlock > 0) blocksToLoad.push(currentBlock - 1);
+      Promise.all(blocksToLoad.map(blockIndex => this.loadBlock(blockIndex))).then(() => resolve()).catch(() => resolve());
+    });
+  },
+  
+  // ---------- 辅助功能 ----------
+  setKeepScreenOn(enabled) {
+    try {
+      brightness.setKeepScreenOn({ keepScreenOn: enabled });
+    } catch (e) {
+      console.warn('屏幕常亮设置失败（不影响游戏）:', e);
+    }
+  },
+  updateTime() {
+    const date = new Date();
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    hours = hours < 10 ? '0' + hours : hours;
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    this.nowTime = `${hours}:${minutes}`;
+  },
+  // 特殊跳转检查（next方向使用noNextPages，back方向使用noBackPages）
+  checkSpecialJump(progressId, direction) {
+    if (direction === 'next' && this.branchConfig.noNextPages[progressId]) {
+      return this.branchConfig.noNextPages[progressId];
+    }
+    if (direction === 'back') {
+      if (this.branchConfig.noBackPages[progressId]) {
+        return this.branchConfig.noBackPages[progressId];
+      }
+    }
+    return null;
+  },
+  // 检查是否属于 hiddenPages，若是则执行映射函数，否则返回原ID
+  checkHiddenPage(progressId) {
+    const idStr = progressId.toString();
+    if (this.branchConfig.hiddenPages && this.branchConfig.hiddenPages[idStr]) {
+      const fn = this.branchConfig.hiddenPages[idStr];
+      try {
+        const mapped = fn(this.branchConfig.choices || {});
+        const num = Number(mapped);
+        return Number.isFinite(num) && !Number.isNaN(num) ? num : progressId;
+      } catch (err) { return progressId; }
+    }
+    return progressId;
+  },
+  checkEndPage(progressId) {
+    return this.branchConfig.end[progressId] || null;
+  },
+  recordChoice(choicePageId, choiceValue) {
+    this.branchConfig.choices[choicePageId] = choiceValue;
+    storage.set({ key: 'branchChoices', value: JSON.stringify(this.branchConfig.choices) });
+  },
+  debouncedSaveProgress() {
+    if (this.progressSaveTimer) clearTimeout(this.progressSaveTimer);
+    this.progressSaveTimer = setTimeout(() => {
+      this.saveProgressToStorage();
+    }, this.progressSaveDelay);
+  },
+  
+  // ---------- 动画方法 ----------
+  startBackgroundAnimation(newBackground, newCg, newCharacterImg, newCharacter, newContect, progressId, newCharacterScaleClass, newBackgroundScaleClass, textFontSize) {
+    if (this.isAnimating) this.finishAnimation();
+    this.isAnimating = true;
+    this.animationStep = 0;
+    this.nextBackground = newBackground;
+    this.nextCg = newCg;
+    this.nextCharacterImg = newCharacterImg;
+    this.nextCharacterScaleClass = newCharacterScaleClass;
+    this.nextBackgroundScaleClass = newBackgroundScaleClass;
+    if (newBackground) this.addToImageCache(newBackground, 'background');
+    if (newCg) this.addToImageCache(newCg, 'cg');
+    if (newCharacterImg) this.addToImageCache(newCharacterImg, 'character');
+    this.character = newCharacter;
+    this.contect = newContect;
+    this.animatingProgressId = progressId;
+    this.currentTextFontSize = textFontSize;
+    this.playAnimation();
+  },
+  playAnimation() {
+    if (!this.isAnimating) return;
+    if (this.animationTimer) clearTimeout(this.animationTimer);
+    if (this.animationStep <= 10) {
+      const opacity = (this.animationStep * (1/10)).toFixed(2);
+      this.maskColor = `rgba(0, 0, 0, ${opacity})`;
+      this.hideText = true;
+      if (this.animationStep === 10) {
+        if (this.nextBackground) this.showNextBackground = true;
+        if (this.nextCg) this.showNextCg = true;
+        if (this.nextCharacterImg) this.showNextCharacter = true;
+        this.characterimg = "";
+        this.cgimg = "";
+        this.displayCharacter = this.character;
+        this.displayText = "";
+        this.cleanupImagesByPriority(1);
+      }
+      this.animationStep++;
+    } else if (this.animationStep <= 20) {
+      const opacity = ((20 - this.animationStep) * (1/10)).toFixed(2);
+      this.maskColor = `rgba(0, 0, 0, ${opacity})`;
+      if (this.animationStep === 20) {
+        if (this.nextBackground) {
+          this.currentBackground = this.nextBackground;
+          this.currentBackgroundScaleClass = this.nextBackgroundScaleClass;
+          this.showNextBackground = false;
+        }
+        if (this.nextCg) {
+          this.cgimg = this.nextCg;
+        }
+        this.showNextCg = false;
+        if (this.nextCharacterImg) {
+          this.characterimg = this.nextCharacterImg;
+          this.currentCharacterScaleClass = this.nextCharacterScaleClass;
+        }
+        this.showNextCharacter = false;
+        this.hideText = false;
+      }
+      this.animationStep++;
+    } else {
+      this.finishAnimation();
+      return;
+    }
+    this.animationTimer = setTimeout(() => this.playAnimation(), 30);
+  },
+finishAnimation() {
+  this.isAnimating = false;
+  this.hideText = false;
+  this.maskColor = "rgba(0, 0, 0, 0.0)";
+  this.showNextBackground = false;
+  this.showNextCg = false;
+  this.showNextCharacter = false;
+  this.nextCg = "";
+  this.nextCharacterImg = "";
+  this.nextCharacterScaleClass = '';
+  this.nextBackgroundScaleClass = '';
+
+  if (this.isEnding) {
+    this.endAnimationDone = true;
+  } else {
+    if (this.animatingProgressId) {
+      this.isPageRead(this.animatingProgressId).then(viewed => this.viewed = viewed).catch(() => this.viewed = false);
+      this.animatingProgressId = null;
+    }
+    // 等待闪光弹时不立即启动文字
+    if (this.waitForFlashbang) {
+      this.displayCharacter = "";
+      this.displayText = "";
+    } else {
+      this.startTypewriter();
+    }
+  }
+},
+  
+  // ---------- 快进快退 ----------
+  quickgo() { this.isGoing ? this.stopQuickGo() : this.startQuickGo(); this.contrlcenterShow = false; },
+  startQuickGo() {
+    this.toTop();
+    this.stopAutoplay();
+    this.stopQuickBack();
+    this.isGoing = true;
+    this.quickNavigationCache = {};
+    this.quickNavigationQueue = [];
+    this.quickSpeed = 50;
+    this.scheduleNextQuickPage();
+  },
+  stopQuickGo() { this.isGoing = false; if (this.goTimer) clearTimeout(this.goTimer); },
+  scheduleNextQuickPage() { if (!this.isGoing) return; if (this.goTimer) clearTimeout(this.goTimer); this.goTimer = setTimeout(() => { if (this.isGoing) this.nextQuickPage(); }, this.quickSpeed); },
+  async nextQuickPage() {
+    if (this.isTyping) {
+      if (this.skipOnlyRead && !await this.isPageRead(this.readProgress)) { this.stopQuickGo(); return; }
+      this.skipTyping();
+    }
+    if (!this.skipOnlyRead) await this.markPageAsRead(this.readProgress);
+    const endText = this.checkEndPage(this.readProgress);
+    if (endText) {
+      this.triggerEndSequence(endText);
+      return;
+    }
+    const hiddenJump = this.checkHiddenPage(this.readProgress);
+    if (hiddenJump !== this.readProgress) {
+      this.readProgress = hiddenJump;
+      await this.saveOnBlockTransition(this.readProgress);
+      await this.loadQuickPage(this.readProgress);
+      this.scheduleNextQuickPage();
+      return;
+    }
+    const specialJump = this.checkSpecialJump(this.readProgress, 'next');
+    if (specialJump != null) {
+      this.readProgress = specialJump;
+      await this.saveOnBlockTransition(this.readProgress);
+      await this.loadQuickPage(this.readProgress);
+      this.scheduleNextQuickPage();
+      return;
+    }
+    if (!this.choose) {
+      this.readProgress++;
+      if (this.skipOnlyRead && !await this.isPageRead(this.readProgress)) { this.stopQuickGo(); return; }
+      await this.saveOnBlockTransition(this.readProgress);
+      await this.loadQuickPage(this.readProgress);
+      this.scheduleNextQuickPage();
+    } else this.stopQuickGo();
+  },
+  quickback() { this.isBacking ? this.stopQuickBack() : this.startQuickBack(); this.contrlcenterShow = false; },
+  startQuickBack() {
+    this.toTop();
+    this.stopAutoplay();
+    this.stopQuickGo();
+    this.isBacking = true;
+    this.quickNavigationCache = {};
+    this.quickNavigationQueue = [];
+    this.quickSpeed = 50;
+    this.scheduleLastQuickPage();
+  },
+  stopQuickBack() { this.isBacking = false; if (this.backTimer) clearTimeout(this.backTimer); },
+  scheduleLastQuickPage() { if (!this.isBacking) return; if (this.backTimer) clearTimeout(this.backTimer); this.backTimer = setTimeout(() => { if (this.isBacking) this.lastQuickPage(); }, this.quickSpeed); },
+  async lastQuickPage() {
+    const specialJump = this.checkSpecialJump(this.readProgress, 'back');
+    if (specialJump != null) {
+      if (specialJump !== this.readProgress) this.readProgress = specialJump;
+      await this.saveOnBlockTransition(this.readProgress);
+      await this.loadQuickPage(this.readProgress);
+      this.scheduleLastQuickPage();
+      return;
+    }
+    if (this.readProgress > 1) {
+      this.readProgress--;
+      await this.saveOnBlockTransition(this.readProgress);
+      await this.loadQuickPage(this.readProgress);
+      this.scheduleLastQuickPage();
+    } else this.stopQuickBack();
+  },
+  async loadQuickPage(progressId) {
+    if (this.isLoadingScript) return;
+    this.isLoadingScript = true;
+    try {
+      if (this.quickNavigationCache[progressId]) {
+        this.applyQuickPageScript(this.quickNavigationCache[progressId], progressId);
+        this.isLoadingScript = false;
+        return;
+      }
+      const endText = this.checkEndPage(progressId);
+      if (endText) {
+        this.triggerEndSequence(endText);
+        this.isLoadingScript = false;
+        return;
+      }
+      if (!this.gameEngine || !this.isGameEngineLoaded) {
+        this.gameEngine = new GameEngine();
+        const loadSuccess = await this.gameEngine.loadGameScript();
+        this.isGameEngineLoaded = loadSuccess;
+        if (!loadSuccess) { this.displayText = "脚本加载失败，请重新启动应用"; this.isLoadingScript = false; return; }
+      }
+      const script = await this.gameEngine.getScript(progressId);
+      if (script) {
+        this.cachePageScript(progressId, script);
+        this.applyQuickPageScript(script, progressId);
+      } else {
+        this.contect = "加载失败，请检查脚本文件";
+        this.displayText = this.contect;
+      }
+    } catch (error) {
+      this.contect = "加载页面失败";
+      this.displayText = this.contect;
+    }
+    finally { this.isLoadingScript = false; }
+  },
+  cachePageScript(progressId, script) {
+    const cacheKeys = Object.keys(this.quickNavigationCache);
+    if (cacheKeys.length >= this.quickCacheSize) {
+      const oldestKey = this.quickNavigationQueue.shift();
+      if (oldestKey) delete this.quickNavigationCache[oldestKey];
+    }
+    this.quickNavigationCache[progressId] = script;
+    const index = this.quickNavigationQueue.indexOf(progressId);
+    if (index > -1) this.quickNavigationQueue.splice(index, 1);
+    this.quickNavigationQueue.push(progressId);
+  },
+  applyQuickPageScript(script, progressId) {
+    const characterScaleClass = this.getCharacterScaleClass(script.z);
+    const backgroundScaleClass = this.getBackgroundScaleClass(script.z);
+    this.updateImageIfNeeded('currentBackground', script.background || "", 'background');
+    this.currentBackgroundScaleClass = backgroundScaleClass;
+    this.updateImageIfNeeded('cgimg', script.cg || "", 'cg');
+    this.updateImageIfNeeded('characterimg', script.character || "", 'character');
+    this.currentCharacterScaleClass = characterScaleClass;
+    this.character = script.speaker || "";
+    const parsed = this.parseTextFontSize(script.text || "");
+    this.contect = parsed.text;
+    this.currentTextFontSize = parsed.fontSize;
+    this.setChoiceData(script, progressId);
+    this.isPageRead(progressId).then(viewed => this.viewed = viewed).catch(() => this.viewed = false);
+    this.displayCharacter = this.character;
+    this.displayText = this.contect;
+    this.isTyping = false;
+    this.currentPageId = progressId;
+    if (this.choose) { this.stopQuickGo(); this.stopQuickBack(); }
+  },
+  
+  // ---------- 选择处理（扩展第五个） ----------
+  async choose1c(){ await this.markPageAsRead(this.readProgress); this.recordChoice(this.readProgress, 1); this.setChooseColors(this.readProgress); this.readProgress = this.choose1To; await this.saveOnBlockTransition(this.readProgress); this.loadPage(this.readProgress); },
+  async choose2c(){ await this.markPageAsRead(this.readProgress); this.recordChoice(this.readProgress, 2); this.setChooseColors(this.readProgress); this.readProgress = this.choose2To; await this.saveOnBlockTransition(this.readProgress); this.loadPage(this.readProgress); },
+  async choose3c(){ await this.markPageAsRead(this.readProgress); this.recordChoice(this.readProgress, 3); this.setChooseColors(this.readProgress); this.readProgress = this.choose3To; await this.saveOnBlockTransition(this.readProgress); this.loadPage(this.readProgress); },
+  async choose4c(){ await this.markPageAsRead(this.readProgress); this.recordChoice(this.readProgress, 4); this.setChooseColors(this.readProgress); this.readProgress = this.choose4To; await this.saveOnBlockTransition(this.readProgress); this.loadPage(this.readProgress); },
+  async choose5c(){ await this.markPageAsRead(this.readProgress); this.recordChoice(this.readProgress, 5); this.setChooseColors(this.readProgress); this.readProgress = this.choose5To; await this.saveOnBlockTransition(this.readProgress); this.loadPage(this.readProgress); },
+  
+  // ---------- 自动播放 ----------
+  autoplay(){ this.isAutoing ? this.stopAutoplay() : this.startAutoplay(); this.contrlcenterShow = false; },
+  startAutoplay() { this.stopQuickGo(); this.stopQuickBack(); this.isAutoing = true; if (this.isTyping) return; this.scheduleNextPage(); },
+  stopAutoplay(){ this.isAutoing = false; if (this.autoPlayTimer) clearTimeout(this.autoPlayTimer); },
+  scheduleNextPage() { if (!this.isAutoing) return; if (this.autoPlayTimer) clearTimeout(this.autoPlayTimer); this.autoPlayTimer = setTimeout(() => { if (this.isAutoing) this.nextPage(); }, this.autoPlayDelay); },
+  
+  // ---------- 页面生命周期 ----------
+  onInit() {
+    this.gameEngine = new GameEngine();
+    this.updateTime();
+    this.timeTimer = setInterval(() => this.updateTime(), 500);
+    setInterval(() => { if (this.imageMemoryUsage > this.maxImageMemory * 0.7) this.cleanupImagesByPriority(2); }, 5000);
+    this.currentBackgroundScaleClass = 'bg-scale-1';
+    this.currentCharacterScaleClass = 'character-scale-1';
+  },
+  onHide() {
+    this.stopAutoplay();
+    this.stopQuickGo();
+    this.stopQuickBack();
+    if (this.typewriterTimer) clearInterval(this.typewriterTimer);
+    if (this.animationTimer) clearTimeout(this.animationTimer);
+    if (this.progressSaveTimer) clearTimeout(this.progressSaveTimer);
+    // 页面隐藏时清理闪光弹效果
+    this.cleanupFlashbang();
+    if (this.readProgress && this.readProgress > 0) {
+      try { storage.set({ key: 'readProgress', value: this.readProgress.toString() }); } catch(e) {}
+    }
+    if (Object.keys(this.pendingSaves).length > 0) this.savePendingBlocks();
+    if (this.gameEngine && this.isGameEngineLoaded) {
+      try { storage.set({ key: 'branchChoices', value: JSON.stringify(this.branchConfig.choices || {}) }); } catch(e) {}
+    }
+    this.cleanupImagesByPriority(3);
+  },
+  onDestroy() {
+    if (this.typewriterTimer) clearInterval(this.typewriterTimer);
+    if (this.autoPlayTimer) clearTimeout(this.autoPlayTimer);
+    if (this.timeTimer) clearInterval(this.timeTimer);
+    if (this.goTimer) clearTimeout(this.goTimer);
+    if (this.backTimer) clearTimeout(this.backTimer);
+    if (this.animationTimer) clearTimeout(this.animationTimer);
+    if (this.progressSaveTimer) clearTimeout(this.progressSaveTimer);
+    // 彻底清理闪光弹
+    this.cleanupFlashbang();
+    if (Object.keys(this.pendingSaves).length > 0) this.savePendingBlocks();
+    this.readBlocks = {};
+    this.currentBlockIndex = 0;
+    this.pendingSaves = {};
+    this.quickNavigationCache = {};
+    this.quickNavigationQueue = [];
+    this.imageCache = {};
+    this.currentImageKeys = [];
+    this.imageMemoryUsage = 0;
+    this.lowMemoryMode = false;
+    this.fontParseCache = {};
+    this.fontParseCacheOrder = [];
+    if (this.gameEngine) this.gameEngine.clearAll();
+  },
+  async onShow(){
+    try {
+      await this.loadAllSettings();
+      await this.loadReadPages();
+      await this.loadChoiceRecords();
+      const progress = await this.getReadProgress();
+      this.readProgress = progress;
+      this.currentPageId = progress;
+      this.lastSavedProgress = progress;
+      await this.loadSaveSlots();
+      if (!this.gameEngine) this.gameEngine = new GameEngine();
+      if (!this.isGameEngineLoaded) {
+        const loadSuccess = await this.gameEngine.loadGameScript();
+        this.isGameEngineLoaded = loadSuccess;
+        if (!loadSuccess) this.displayText = "脚本加载失败";
+      }
+      if (this.isGameEngineLoaded) {
+        this.loadPage(this.readProgress);
+      }
+      this.viewed = await this.isPageRead(this.readProgress);
+    } catch (error) { console.error('onShow执行出错:', error); }
+    
+      this.setKeepScreenOn(this.screenAlwaysOn);
+  },
+  
+  // ---------- 设置与存档 ----------
+  async loadAllSettings() {
+    return new Promise((resolve) => {
+      const settings = [
+        { key: 'textSpeedSetting', prop: 'textSpeed', type: 'number' },
+        { key: 'fontSizeSetting', prop: 'fontSize', type: 'number' },
+        { key: 'unreadColorSetting', prop: 'unreadColor', type: 'string' },
+        { key: 'readColorSetting', prop: 'readColor', type: 'string' },
+        { key: 'screenAlwaysOnSetting', prop: 'screenAlwaysOn', type: 'boolean' },
+        { key: 'boldTextSetting', prop: 'boldText', type: 'boolean' },
+        { key: 'skipOnlyReadSetting', prop: 'skipOnlyRead', type: 'boolean' },
+        { key: 'autoPlayDelaySetting', prop: 'autoPlayDelay', type: 'number' }
+      ];
+      let loadedCount = 0;
+      settings.forEach(({ key, prop, type }) => {
+        storage.get({ key, success: (data) => {
+            if (data !== null && data !== undefined) {
+              if (type === 'number') this[prop] = Number(data);
+              else if (type === 'boolean') this[prop] = data === 'true';
+              else this[prop] = data;
+            }
+            loadedCount++;
+            if (loadedCount === settings.length) resolve();
+          }, fail: () => { loadedCount++; if (loadedCount === settings.length) resolve(); }
+        });
+      });
+    });
+  },
+  async loadSaveSlots(){ 
+    try {
+      const saveSlotsData = await new Promise((resolve) => {
+        storage.get({ key: 'saveSlots', success: (data) => { try { resolve(JSON.parse(data)); } catch(e) { resolve(null); } }, fail: () => resolve(null) });
+      });
+      if (saveSlotsData && Array.isArray(saveSlotsData)) this.saveSlots = saveSlotsData;
+      const loadPromises = [];
+      for(let i = 0; i < this.saveSlots.length; i++) {
+        loadPromises.push(new Promise((resolve) => {
+          storage.get({ key: `p${i+1}`, success: (data) => { const progress = Number(data) || 1; this.saveSlots[i].progress = progress; this.saveSlots[i].text = progress === 1 ? "空" : `进度${progress}`; resolve(true); }, fail: () => { this.saveSlots[i].progress = 1; this.saveSlots[i].text = "空"; resolve(false); } });
+        }));
+      }
+      await Promise.all(loadPromises);
+    } catch (error) { console.error('加载存档时出错:', error); }
+  },
+  saveSlotsConfig() {
+    const slotsToSave = this.saveSlots.map(slot => ({ id: slot.id, text: slot.text, progress: slot.progress }));
+    storage.set({ key: 'saveSlots', value: JSON.stringify(slotsToSave) });
+  },
+  addSaveSlot() {
+    if (this.saveSlots.length >= this.maxSaveSlots) { prompt.showToast({ message: `已达到最大存档位数量(${this.maxSaveSlots})`, duration: 2000 }); return; }
+    const newSlotId = this.saveSlots.length + 1;
+    this.saveSlots.push({ id: newSlotId, text: "空", progress: 1 });
+    this.saveSlotsConfig();
+    prompt.showToast({ message: `已添加存档位${newSlotId}`, duration: 2000 });
+  },
+  saveToSlot(slotIndex) {
+    if (slotIndex > this.saveSlots.length) { prompt.showToast({ message: '存档位不存在', duration: 2000 }); return; }
+    const slot = this.saveSlots[slotIndex - 1];
+    storage.set({ key: `p${slotIndex}`, value: this.readProgress.toString(), success: () => { slot.progress = this.readProgress; slot.text = `进度${this.readProgress}`; this.saveSlots = [...this.saveSlots]; prompt.showToast({ message: '保存成功', duration: 2000 }); }, fail: () => prompt.showToast({ message: '保存失败', duration: 2000 }) });
+  },
+  async deleteSlot(slotIndex) {
+    if (slotIndex <= 0 || slotIndex > this.saveSlots.length) { prompt.showToast({ message: '存档位不存在', duration: 1000 }); return; }
+    const totalSlots = this.saveSlots.length;
+    const allSlotData = {};
+    for (let i = 1; i <= totalSlots; i++) allSlotData[i] = await new Promise((resolve) => storage.get({ key: `p${i}`, success: resolve, fail: () => resolve(null) }));
+    for (let i = 1; i <= totalSlots; i++) await new Promise((resolve) => storage.delete({ key: `p${i}`, success: resolve, fail: resolve }));
+    let newSlotNum = 1;
+    for (let oldSlotNum = 1; oldSlotNum <= totalSlots; oldSlotNum++) {
+      if (oldSlotNum !== slotIndex && allSlotData[oldSlotNum]) {
+        await new Promise((resolve) => storage.set({ key: `p${newSlotNum}`, value: allSlotData[oldSlotNum], success: resolve, fail: resolve }));
+        newSlotNum++;
+      }
+    }
+    this.saveSlots.splice(slotIndex - 1, 1);
+    for (let i = 0; i < this.saveSlots.length; i++) {
+      const slotNum = i + 1;
+      this.saveSlots[i].id = slotNum;
+      await new Promise((resolve) => storage.get({ key: `p${slotNum}`, success: (data) => { if (data) { const progress = Number(data); this.saveSlots[i].progress = progress; this.saveSlots[i].text = `进度${progress}`; } else { this.saveSlots[i].progress = 1; this.saveSlots[i].text = "空"; } resolve(); }, fail: () => { this.saveSlots[i].progress = 1; this.saveSlots[i].text = "空"; resolve(); } }));
+    }
+    this.saveSlots = [...this.saveSlots];
+    this.saveSlotsConfig();
+    prompt.showToast({ message: `存档位${slotIndex}已删除`, duration: 1500 });
+  },
+  async reloadAllSaveSlots() {
+    const promises = [];
+    for (let i = 0; i < this.saveSlots.length; i++) {
+      const promise = new Promise((resolve) => {
+        const slotIndex = i + 1;
+        storage.get({ key: `p${slotIndex}`, success: (data) => { if (data) { const progress = Number(data); this.saveSlots[i].progress = progress; this.saveSlots[i].text = `进度${progress}`; } else { this.saveSlots[i].progress = 1; this.saveSlots[i].text = "空"; } resolve(true); }, fail: () => { this.saveSlots[i].progress = 1; this.saveSlots[i].text = "空"; resolve(true); } });
+      });
+      promises.push(promise);
+    }
+    await Promise.all(promises);
+    this.saveSlots = [...this.saveSlots];
+    return true;
+  },
+  quickSave() { this.saveToSlot(1); this.contrlcenterShow = false; },
+  loadSlot(slotIndex){ 
+    this.pageloading();
+    storage.get({ key: `p${slotIndex}`, success: async (data) => { const savedProgress = Number(data) || 1; await this.handleBlockChange(savedProgress); this.readProgress = savedProgress; this.loadPage(this.readProgress); this.loadShow = false; this.contrlcenterShow = false; this.stopAutoplay(); this.stopQuickGo(); this.stopQuickBack(); }, fail: () => prompt.showToast({ message: '加载失败', duration: 2000 }) });
+  },
+  loadStart(slotIndex) { this.loadSlot(slotIndex); this.contrlcenterShow = false; },
+  async handleBlockChange(newPageId) {
+    const newBlockIndex = this.getBlockIndex(newPageId);
+    const oldBlockIndex = this.currentBlockIndex;
+    if (newBlockIndex !== oldBlockIndex) {
+      if (Object.keys(this.pendingSaves).length > 0) await this.savePendingBlocks();
+      await this.loadBlock(newBlockIndex);
+      this.currentBlockIndex = newBlockIndex;
+      this.preloadAdjacentBlocks(newPageId);
+      this.smartCleanBlocks(newPageId);
+    }
+  },
+  saveProgressToStorage() {
+    if (this.readProgress !== this.lastSavedProgress) {
+      this.lastSavedProgress = this.readProgress;
+      storage.set({ key: 'readProgress', value: this.readProgress.toString() });
+    }
+  },
+  
+  // ---------- 核心页面加载 ----------
+  async loadPage(progressId){ 
+    if (this.isLoadingScript) return;
+    this.isLoadingScript = true;
+    try {
+      const endText = this.checkEndPage(progressId);
+      if (endText) {
+        // 结局页正常加载内容，由后续点击触发end序列
+      }
+      if (!this.gameEngine || !this.isGameEngineLoaded) {
+        this.gameEngine = new GameEngine();
+        const loadSuccess = await this.gameEngine.loadGameScript();
+        this.isGameEngineLoaded = loadSuccess;
+        if (!loadSuccess) { this.displayText = "脚本加载失败，请重新启动应用"; this.isLoadingScript = false; return; }
+      }
+      const script = await this.gameEngine.getScript(progressId);
+      if (!script) { this.contect = "加载失败，请检查脚本文件"; this.displayText = this.contect; this.displayCharacter = "系统"; this.isLoadingScript = false; return; }
+      
+      const characterScaleClass = this.getCharacterScaleClass(script.z);
+      const backgroundScaleClass = this.getBackgroundScaleClass(script.z);
+      
+      const newBackground = script.background || "";
+      const newCharacter = script.speaker || "";
+      const newContect = script.text || "";
+      const newCg = script.cg || "";
+      const newCharacterImg = script.character || "";
+      
+      await this.smartPreloadImages(script, progressId);
+      if (newBackground) { this.addToImageCache(newBackground, 'background'); this.markImageAsUsed(newBackground, 'background'); }
+      if (newCg) { this.addToImageCache(newCg, 'cg'); this.markImageAsUsed(newCg, 'cg'); }
+      if (newCharacterImg) { this.addToImageCache(newCharacterImg, 'character'); this.markImageAsUsed(newCharacterImg, 'character'); }
+      
+      const parsed = this.parseTextFontSize(newContect);
+      const actualContect = parsed.text;
+      const textFontSize = parsed.fontSize;
+      
+      const shouldAnimate = (newBackground && newBackground !== this.currentBackground);
+      
+      if (shouldAnimate) {
+          this.startBackgroundAnimation(newBackground, newCg, newCharacterImg, newCharacter, actualContect, progressId, characterScaleClass, backgroundScaleClass, textFontSize);
+          this.setChoiceData(script, progressId);
+          this.currentPageId = progressId;
+
+          // 如果是闪光弹页面，暂时不显示文字，等待闪光弹结束后再显示
+          if (this.flashbangPages.includes(progressId)) {
+              this.waitForFlashbang = true;
+              this.displayCharacter = "";
+              this.displayText = "";
+          }
+      } else {
+          this.updateImageIfNeeded('currentBackground', newBackground, 'background');
+          this.currentBackgroundScaleClass = backgroundScaleClass;
+          this.updateImageIfNeeded('cgimg', newCg, 'cg');
+          this.updateImageIfNeeded('characterimg', newCharacterImg, 'character');
+          this.currentCharacterScaleClass = characterScaleClass;
+          this.character = newCharacter;
+          this.contect = actualContect;
+          this.currentTextFontSize = textFontSize;
+          this.setChoiceData(script, progressId);
+          this.displayCharacter = this.character;
+          this.isPageRead(progressId).then(viewed => this.viewed = viewed).catch(() => this.viewed = false);
+          this.currentPageId = progressId;
+
+          // 闪光弹页面：不立即显示文字，等待闪光弹结束
+          if (this.flashbangPages.includes(progressId)) {
+              this.waitForFlashbang = true;
+              this.displayCharacter = "";
+              this.displayText = "";
+          } else {
+              this.startTypewriter();
+          }
+      }
+      
+      // 闪光弹触发：如果当前页面在闪光弹列表中，根据不同情况延时触发
+      if (!this.isEnding && this.flashbangPages.includes(progressId)) {
+          // 有背景切换动画时等待动画完成（约650ms），否则快速触发（80ms）
+          const delay = shouldAnimate ? 650 : 80;
+          setTimeout(() => {
+              this.triggerFlashbang();
+          }, delay);
+      }
+      
+    } catch (error) {
+      console.error('加载页面失败:', error);
+      this.contect = "加载页面失败，请稍后重试";
+      this.displayText = this.contect;
+      this.displayCharacter = "系统";
+    } finally {
+      this.isLoadingScript = false;
+    }
+  },
+  setChoiceData(script, progressId) {
+    this.choose = script.choose || false;
+    this.choose1 = script.choose1 || "";
+    this.choose2 = script.choose2 || "";
+    this.choose3 = script.choose3 || "";
+    this.choose4 = script.choose4 || "";
+    this.choose5 = script.choose5 || "";
+    this.choose1To = script.choose1To || progressId;
+    this.choose2To = script.choose2To || progressId;
+    this.choose3To = script.choose3To || progressId;
+    this.choose4To = script.choose4To || progressId;
+    this.choose5To = script.choose5To || progressId;
+    this.choose1Visible = Boolean((this.choose1 || "").toString().trim());
+    this.choose2Visible = Boolean((this.choose2 || "").toString().trim());
+    this.choose3Visible = Boolean((this.choose3 || "").toString().trim());
+    this.choose4Visible = Boolean((this.choose4 || "").toString().trim());
+    this.choose5Visible = Boolean((this.choose5 || "").toString().trim());
+    this.choose = Boolean(this.choose && (this.choose1Visible || this.choose2Visible || this.choose3Visible || this.choose4Visible || this.choose5Visible));
+    if (this.choose) this.setChooseColors(progressId);
+  },
+  
+  // ---------- 逐字显示 ----------
+  startTypewriter() {
+    if (this.typewriterTimer) clearInterval(this.typewriterTimer);
+    this.displayText = "";
+    this.currentTextIndex = 0;
+    this.isTyping = true;
+    this.typewriterTimer = setInterval(() => {
+      if (this.currentTextIndex < this.contect.length) {
+        this.displayText += this.contect.charAt(this.currentTextIndex);
+        this.currentTextIndex++;
+        if (this.currentTextIndex % 20 === 0 || this.currentTextIndex === this.contect.length) {
+          const now = Date.now();
+          if (now - this.lastScrollTime > this.scrollThrottleDelay) {
+            this.$element('Scroll').scrollTo({ top: 9999, behavior: 'smooth' });
+            this.lastScrollTime = now;
+          }
+        }
+      } else {
+        this.isTyping = false;
+        clearInterval(this.typewriterTimer);
+        const now = Date.now();
+        if (now - this.lastScrollTime > this.scrollThrottleDelay) {
+          this.$element('Scroll').scrollTo({ top: 9999, behavior: 'smooth' });
+          this.lastScrollTime = now;
+        }
+        if (this.isAutoing) this.scheduleNextPage();
+      }
+    }, this.textSpeed);
+  },
+  skipTyping() {
+    if (this.skipOnlyRead) {
+      this.isPageRead(this.readProgress).then(viewed => { if (viewed) this.completeSkipTyping(); }).catch(() => this.completeSkipTyping());
+    } else this.completeSkipTyping();
+  },
+  completeSkipTyping() {
+    if (this.typewriterTimer) clearInterval(this.typewriterTimer);
+    this.displayText = this.contect;
+    this.isTyping = false;
+    const now = Date.now();
+    if (now - this.lastScrollTime > this.scrollThrottleDelay) {
+      this.$element('Scroll').scrollTo({ top: 9999, behavior: 'smooth' });
+      this.lastScrollTime = now;
+    }
+  },
+  
+  // ---------- 结局序列 ----------
+  triggerEndSequence(text) {
+    this.stopAutoplay();
+    this.stopQuickGo();
+    this.stopQuickBack();
+    if (this.typewriterTimer) clearInterval(this.typewriterTimer);
+    this.isTyping = false;
+    
+    this.isEnding = true;
+    this.endText = text;
+    this.endAnimationDone = false;
+    
+    this.choose = false;
+    this.hideText = true;
+    this.pageShow = true;
+    
+    this.startBackgroundAnimation(
+      '/common/bcgi/画面_白.jpg',
+      '',
+      '',
+      '',
+      '',
+      null,
+      '',
+      'bg-scale-1',
+      this.fontSize
+    );
+  },
+  
+  endClickReturn() {
+    this.indexRoute();
+  },
+  
+  playPage() {
+    if (this.isEnding && this.endAnimationDone) return;
+    // 闪光弹期间禁止切换页面显示隐藏，避免冲突
+    if (this.isFlashActive) return;
+    if (this.pageShow === false) this.pageShow = !this.pageShow;
+  },
+  
+  // 翻页逻辑：新增 hiddenPages 跳转，同时闪光弹期间不允许翻页
+  async nextPage(){ 
+    if (this.isTyping || this.isAnimating || this.isGoing || this.isBacking || this.isLoadingScript) return;
+    if (this.isFlashActive) return;   // 闪光弹期间禁止翻页
+    if (this.choose === true){ this.stopAutoplay(); return; }
+    const endText = this.checkEndPage(this.readProgress);
+    if (endText) {
+      this.triggerEndSequence(endText);
+      return;
+    }
+    if (this.branchConfig.hiddenPages[this.readProgress]) {
+      const targetId = this.branchConfig.hiddenPages[this.readProgress](this.branchConfig.choices);
+      if (targetId !== this.readProgress) {
+        await this.markPageAsRead(this.readProgress);
+        this.readProgress = targetId;
+        await this.saveOnBlockTransition(this.readProgress);
+        this.loadPage(this.readProgress);
+        return;
+      }
+    }
+    await this.markPageAsRead(this.readProgress);
+    const specialJump = this.checkSpecialJump(this.readProgress, 'next');
+    if (specialJump != null) { this.readProgress = specialJump; await this.saveOnBlockTransition(this.readProgress); this.loadPage(this.readProgress); return; }
+    if (!this.choose) { this.readProgress++; await this.saveOnBlockTransition(this.readProgress); this.loadPage(this.readProgress); }
+  },
+  
+  // ---------- 页面显示隐藏 ----------
+  displayPage(){ 
+    if(this.isAnimating || this.isAutoing || this.isGoing || this.isBacking || this.contrlcenterShow || this.isEnding) return;
+    if (this.isFlashActive) return;   // 闪光弹期间不响应长按
+    this.pageShow = !this.pageShow; 
+  },
+  
+  // ---------- 路由 ----------
+  settingsRoute(){ this.contrlcenterShow = false; this.pageloading(); this.stopAutoplay(); this.stopQuickGo(); this.stopQuickBack(); router.push({ uri:'pages/settings' }); },
+  lctRoute(){ this.contrlcenterShow = false; this.pageloading(); this.stopAutoplay(); this.stopQuickGo(); this.stopQuickBack(); router.push({ uri:'pages/lct' }); },
+  indexRoute(){ router.replace({ uri:'pages/index' }); },
+  pageloading(){
+    this.currentBackground = "/common/bcgi/異世界_前景a.jpg";
+    this.currentBackgroundScaleClass = 'bg-scale-1';
+    this.characterimg = "";
+    this.cgimg = "";
+    this.currentCharacterScaleClass = 'character-scale-1';
+    this.displayText = "......加载中......";
+    this.displayCharacter = " ";
+    this.currentTextFontSize = this.fontSize;
+  },
+  toTop(){ this.$element('Scroll').scrollTo({ top: 0, left: 0, behavior: 'smooth' }); },
+  
+  // ---------- 页面滚动操作----------
+  hidecontrlcenter(){ this.contrlcenterShow = false; },
+  pageSwipe(e){
+    if (this.isEnding) return;
+    if (this.isFlashActive) return;   // 闪光弹期间禁止滑动手势
+    if( e.direction === 'right' && this.readProgress>1 && this.contrlcenterShow === false && this.pageShow === true && !this.isAnimating ) {
+      const specialJump = this.checkSpecialJump(this.readProgress, 'back');
+      if (specialJump != null) { if (specialJump !== this.readProgress) this.readProgress = specialJump; this.loadPage(this.readProgress); }
+      else { this.readProgress--; this.loadPage(this.readProgress); }
+    } else if(e.direction === 'down' && !this.isAnimating){ this.contrlcenterShow = true; this.saveProgressToStorage(); this.savePendingBlocks(); }
+    else if(e.direction === 'up' && !this.isAnimating){ this.contrlcenterShow = false; }
+  },
+  loadSaveSwipe(e) { if (e.direction === 'right') { if (this.loadShow) this.loadconShow(); else if (this.saveShow) this.saveconShow(); } },
+  controlCenterSwipe(e) { if (e.direction === 'right') this.hidecontrlcenter(); },
+  loadconShow(){ this.loadShow = !this.loadShow; if (this.loadShow) { this.stopAutoplay(); this.stopQuickGo(); this.stopQuickBack(); } },
+  saveconShow(){ this.saveShow = !this.saveShow; if (this.saveShow) { this.stopAutoplay(); this.stopQuickGo(); this.stopQuickBack(); } },
+  
+  async loadChoiceRecords() {
+    return new Promise((resolve) => {
+      storage.get({ key: 'branchChoices', success: (data) => { try { this.branchConfig.choices = JSON.parse(data); } catch(e) { this.branchConfig.choices = {}; } resolve(); }, fail: () => { this.branchConfig.choices = {}; resolve(); } });
+    });
+  },
+  setChooseColors(progressId) {
+    const choice = this.branchConfig.choices[progressId];
+    this.choose1Color = (choice === 1) ? this.readColor : this.unreadColor;
+    this.choose2Color = (choice === 2) ? this.readColor : this.unreadColor;
+    this.choose3Color = (choice === 3) ? this.readColor : this.unreadColor;
+    this.choose4Color = (choice === 4) ? this.readColor : this.unreadColor;
+    this.choose5Color = (choice === 5) ? this.readColor : this.unreadColor;
+  },
+  getReadProgress() { return new Promise((resolve) => storage.get({ key: 'readProgress', success: (data) => resolve(Number(data) || 1), fail: () => resolve(1) })); }
+};
+</script>
+
+<style>
+.page{
+  background-color: rgb(255, 255, 255);
+  flex-direction: column;
+  justify-content:center;
+  align-items: center;
+  margin: auto;
+  width: 336px;
+  height: 480px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 背景图片样式 */
+.backgroundimg{
+  position: absolute;
+  flex-direction: column;
+  align-items: center;
+  object-fit: cover;
+  object-position: center;
+  height: 480px;
+  width: 100%;
+  z-index: 1;
+}
+.next-background{
+  z-index: 1;
+}
+
+/* 背景缩放类 */
+.bg-scale-1 { transform: scale(1) translate(0px, 0px); }
+.bg-scale-11 { transform: scale(1.1) translate(-20px, -20px); }
+
+/* CG图片样式 */
+.cgimg{
+  position: absolute;
+  flex-direction: column;
+  align-items: center;
+  object-fit: cover;
+  object-position: center;
+  height: 100%;
+  width: 336px;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+.next-cg{
+  z-index: 2;
+}
+
+/* 立绘容器 */
+.character-container {
+  position: absolute;
+  justify-content:center;
+  width: 336px;
+  height: 480px;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  top: 0;
+  left: 0;
+}
+
+/* 立绘基础样式 */
+.characterimg{
+  position: relative;
+  flex: 0 0 auto;
+  height:100%;
+  z-index: 3;
+  top: 60px;
+}
+.next-character{
+  z-index: 3;
+}
+
+/* 立绘缩放类 */
+.character-scale-07 { transform: scale(0.6) translate(50px, 45px); }
+.character-scale-12 { transform: scale(1.2) translate(-20px, 15px); }
+.character-scale-1  { transform: scale(1) translate(0px, 40px); }
+
+/* 黑色遮罩层 */
+.background-mask{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 4;
+}
+
+/* 闪光弹白色遮罩层 */
+.flashbang-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  z-index: 1000;
+}
+
+/* 对话框 */
+.board{
+  position: absolute;
+  object-fit: contain;
+  bottom: 0;
+  z-index: 5;
+}
+
+/* 角色名 */
+.character{
+  position: absolute;
+  top:290px;
+  left: 30px;
+  right: 5px;
+  font-size: 24px;
+  color: #ffffff;
+  z-index: 6;
+}
+
+/* 文本滚动区域 */
+.scroll2{
+  flex-direction: column;
+  justify-content:flex-start;
+  align-items: flex-start;
+  position: absolute;
+  top:330px;
+  bottom:0px;
+  left: 15px;
+  right: 15px;
+  z-index: 6;
+}
+
+.contect{
+  font-size:30px;
+  font-weight: 100;
+  color: #d495d4;
+}
+
+/* 选择选项样式 - 支持滚动以容纳5个及以上选项 */
+.choose {
+  flex-direction: column;
+  justify-content:flex-start;
+  align-items: center;
+  position: absolute;
+  top: 80px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 10;
+  width: 100%;
+}
+.choosetext{
+  color: #ffffff;
+  margin-top: 15px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-size:30px;
+  font-weight: 800;
+  width: 260px;
+  box-sizing: border-box;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* 跳过按钮样式 */
+.skip-btn2 { position: absolute; top:20px; right: 20px; z-index: 10; background-color:rgba(0,0,0,0.5); padding:5px 10px; border-radius:10px; }
+.skip-btn3 { position: absolute; top:20px; right: 20px; z-index: 10; background-color:rgba(0,0,0,0.5); padding:5px 10px; border-radius:10px; }
+.skip-btn4 { position: absolute; top:20px; right: 20px; z-index: 10; background-color:rgba(0,0,0,0.5); padding:5px 10px; border-radius:10px; }
+.skip-btn2 text { font-size: 24px; color: #ffffff50; }
+.skip-btn3 text { font-size: 24px; color: #ffffff50; }
+.skip-btn4 text { font-size: 24px; color: #ffffff50; }
+
+/* 控制中心页面样式 */
+.page1{
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.863);
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: auto;
+  width: 100%;
+  bottom: 0;
+  top:0;
+  z-index: 20;
+}
+.load{
+  margin-top: 20px;
+  font-size: 35px;
+  color: #232525f6;
+  font-weight: 800;
+  width: 80%;
+  background-color: rgba(185, 224, 255, 0.637);
+  text-align: center;
+}
+.load2{
+  margin-top: 15px;
+  font-size: 35px;
+  color: #232525f6;
+  font-weight: 800;
+  width: 80%;
+  text-align: center;
+}
+.load3{
+  margin-top: 20px;
+  font-size: 24px;
+  color: #232525f6;
+  width: 80%;
+  background-color: rgba(185, 224, 255, 0.637);
+  text-align: center;
+}
+
+.scroll{
+  top:5px;
+  height: 400px;
+  text-align: left;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  z-index: 0;
+  flex: 1;
+  width: 100%;
+}
+
+.save-item { flex-direction: column; justify-content: center; align-items: center; }
+.save-add { justify-content: center; align-items: center; }
+
+/* 结局画面覆盖层 */
+.end-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.end-text {
+  font-size: 36px;
+  font-weight: bold;
+  color: #000000;
+  text-align: center;
+  padding: 20px;
+}
+</style>

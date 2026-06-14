@@ -1,0 +1,478 @@
+<template>
+
+  <div class="page" onswipe="loadpageProccess">
+
+    <image class="background" src="{{bg}}" onclick="hidui" if="{{uishow}}"></image>
+    <image class="logo" src="deactivelogo.png" if="{{uishow}}"></image>
+
+    <image class="about" src="info.png" @click="about" if="{{uishow}}"></image>
+    <image class="settings" src="settings.png" @click="settings" if="{{uishow}}"></image>
+
+    <div class="group-1">
+
+      <text class="mid" onclick="start" if="{{uishow}}">开始游戏</text>
+      <text class="mid" onclick="lastStart" if="{{uishow}}">从上次开始</text>
+
+      <text class="mid" onclick="loadProccess" if="{{uishow}}">读取存档</text>
+      <text class="mid" onclick="more" if="{{uishow}}">更多</text>
+
+    </div>
+    <image class="bc" src="/common/bcgi/異世界_前景a.jpg" if="{{!uishow}}"></image>
+    <image class="reset2" src="/common/reset.png" onclick="reset" if="{{!uishow}}"></image> 
+    <image class="background2" src="{{bg}}" onclick="hidui" if="{{!uishow}}"></image>
+
+    <image class="reset" src="/common/reset.png" onclick="reset" if="{{uishow}}"></image>
+    <image class="back" src="/common/go.png" onclick="die" if="{{uishow}}"></image>
+    <div class="page1" if="{{loadShow}}">
+      <text class="load" onclick="unloadProccess">返回</text>
+      <scroll id="mainScroll" class="scroll" scroll-y="{{true}}" bounces="{{true}}">
+        <!-- 使用 for 循环渲染存档 -->
+        <div class="save-item" for="{{(index, item) in saveSlots}}" onclick="loadSlot(index + 1)">
+          <text class="load">存档{{index + 1}}: {{item.text}}</text>
+        </div>
+        <text class="load2"></text>
+      </scroll>
+    </div>
+
+  </div>
+</template>
+
+<script>
+import app from '@system.app' 
+import storage from '@system.storage'
+import router from '@system.router' 
+import prompt from '@system.prompt'
+
+
+export default {
+  data: {
+  uishow:true,
+  readProgress: 1,
+  // 存档数据 - 改为动态数组
+  saveSlots: [
+    { id: 1, text: "空", progress: 1 },
+    { id: 2, text: "空", progress: 1 },
+    { id: 3, text: "空", progress: 1 },
+    { id: 4, text: "空", progress: 1 },
+    { id: 5, text: "空", progress: 1 }
+  ],
+  maxSaveSlots: 100, // 最大存档位数量
+  loadShow: false,
+  loading:false,
+  bgIndex:0,
+  bgList:[
+    '/common/title_bg0.jpg',
+    '/common/title_bg1.jpg',
+    '/common/title_bg2.jpg',
+    '/common/title_bg3.jpg',
+    '/common/title_bg4.jpg',
+    '/common/title_bg5.jpg',
+    '/common/title_bg6.jpg',
+    '/common/title_bg7.jpg',
+    '/common/title_bg8.jpg',
+  ],
+  bg:'/common/title_bg0.jpg',
+  // 避免重复执行初次检查的标志
+  firstLaunchChecked: false,
+},
+  back(){
+    return;
+  },
+  loadingp(){
+    this.loading = !this.loading;
+  },
+  hidui(){
+    this.uishow = !this.uishow;
+  },
+  
+  async onShow(){
+    // 检查是否为初次启动，并自动跳转 about 页面（仅执行一次）
+    this.checkFirstLaunch();
+
+    // 1. 读取保存的背景索引
+    storage.get({
+      key: 'bg',
+      success: (data) => {
+        console.log('读取背景索引成功:', data);
+        // 尝试解析为数字
+        const savedIndex = parseInt(data);
+        
+        if (!isNaN(savedIndex) && savedIndex >= 0 && savedIndex < this.bgList.length) {
+          this.bgIndex = savedIndex;
+          console.log('使用保存的背景索引:', this.bgIndex);
+        } else {
+          console.log('背景索引无效，使用默认值0');
+          this.bgIndex = 0;
+        }
+        
+        // 更新背景显示
+        this.updateBackground();
+      },
+      fail: (err) => {
+        console.log('未找到背景设置，使用默认值');
+        this.updateBackground(); // 使用默认背景
+      }
+    });
+    
+    // 2. 读取当前阅读进度
+    storage.get({
+      key: 'readProgress',
+      success:(data)=> {
+        console.log('流动进度读取成功')
+        this.readProgress = Number(data) || 1
+      },
+      fail:(code)=>{
+        console.log(`流动读取失败,${code}`)
+      }
+    })
+    
+    // 3. 加载存档数据
+    await this.loadSaveSlots();
+  },
+
+  // 加载存档位数据
+  async loadSaveSlots(){ 
+    try {
+      // 加载存档位数量
+      const saveSlotsData = await new Promise((resolve) => {
+        storage.get({
+          key: 'saveSlots',
+          success: (data) => {
+            if (data) {
+              try {
+                const slots = JSON.parse(data);
+                resolve(slots);
+              } catch (e) {
+                resolve(null);
+              }
+            } else {
+              resolve(null);
+            }
+          },
+          fail: () => {
+            resolve(null);
+          }
+        });
+      });
+      
+      if (saveSlotsData && Array.isArray(saveSlotsData)) {
+        this.saveSlots = saveSlotsData;
+      }
+      
+      // 加载每个存档的具体数据
+      const loadPromises = [];
+      
+      for(let i = 0; i < this.saveSlots.length; i++) {
+        const promise = new Promise((resolve) => {
+          storage.get({ 
+            key: `p${i + 1}`,
+            success: (data) => { 
+              const progress = Number(data) || 1;
+              this.saveSlots[i].progress = progress;
+              this.saveSlots[i].text = progress === 1 ? "空" : `进度${progress}`;
+              resolve(true);
+            }, 
+            fail: (error) => { 
+              console.log(`存档${i + 1}读取失败:`, error);
+              this.saveSlots[i].progress = 1;
+              this.saveSlots[i].text = "空";
+              resolve(false);
+            } 
+          }); 
+        });
+        loadPromises.push(promise);
+      }
+      
+      await Promise.all(loadPromises);
+      console.log(`加载了${this.saveSlots.length}个存档位`);
+    } catch (error) {
+      console.error('加载存档时出错:', error);
+    }
+  },
+
+  reset() {
+    // 1. 增加索引（循环）
+    this.bgIndex = (this.bgIndex + 1) % this.bgList.length;
+    
+    // 2. 更新界面显示
+    this.updateBackground();
+    
+    // 3. 保存到本地存储
+    storage.set({ 
+      key: 'bg',
+      value: String(this.bgIndex), // 存储索引
+      success: () => { 
+        console.log(`背景索引保存成功: ${this.bgIndex}`); 
+      }, 
+      fail: (error) => { 
+        console.error(`背景保存失败:`, error); 
+      } 
+    });
+  },
+
+  updateBackground(){
+    const index = this.bgIndex % this.bgList.length;
+    this.bg = this.bgList[index];
+  },
+  
+  // 加载指定存档
+  loadSlot(slotIndex){ 
+    console.log('加载存档:', slotIndex);
+    storage.get({
+      key: `p${slotIndex}`,
+      success: (data) => {
+        const savedProgress = Number(data) || 1;
+        console.log(`从存档${slotIndex}读取进度:`, savedProgress);
+        
+        storage.set({
+          key: 'readProgress',
+          value: savedProgress.toString(),
+          success: () => console.log('进度设置成功'),
+          fail: (error) => console.error('进度设置失败:', error)
+        });
+        
+        router.replace({
+          uri:'pages/detail'
+        })
+        this.loadShow = false;
+      },
+      fail: (error) => {
+        console.error(`读取存档${slotIndex}失败:`, error);
+        prompt.showToast({
+          message: '加载失败',
+          duration: 2000
+        });
+      }
+    });
+  },
+  
+  about(){
+    router.push({
+      uri:'pages/about',
+    })
+  },
+
+  settings(){
+    router.push({
+      uri:'pages/settings',
+    })
+  },
+  more(){
+    router.push({
+      uri:'pages/more',
+    })
+  },
+  die(){
+    app.terminate();
+  },
+  start(){
+    this.loadingp();
+    storage.set({
+      key: 'readProgress',
+      value: JSON.stringify( 1 ),
+      success: () => console.log('进度重置成功'),
+      fail: (error) => console.error('进度重置失败:', error)
+    });
+    router.replace({
+      uri:'pages/detail'
+    })
+  },
+
+  lastStart(){
+    this.loadingp();
+    router.replace({
+      uri:'pages/detail'
+    })
+  },
+  loadProccess(){
+      this.loadShow = true;
+  },
+  unloadProccess(){
+      this.loadShow = false;
+  },
+  loadpageProccess(e){
+    if(this.loadShow === true && e.direction === 'right'){
+      this.loadShow = false;
+    }
+  },
+
+  // 新增方法：检查是否初次启动，若是则跳转 about 页面
+  checkFirstLaunch() {
+    // 防止重复调用
+    if (this.firstLaunchChecked) return;
+    this.firstLaunchChecked = true;
+
+    storage.get({
+      key: 'hasLaunchedBefore2',
+      success: (data) => {
+        // 如果没有标记过，则为初次启动
+        if (data !== 'true') {
+          // 设置已启动标记
+          storage.set({
+            key: 'hasLaunchedBefore2',
+            value: 'true',
+            success: () => {},
+            fail: () => {}
+          });
+          // 跳转到 about 页面
+          router.push({
+            uri: 'pages/about'
+          });
+        }
+      },
+      fail: () => {
+        // 读取失败时也视为初次启动，进行标记并跳转
+        storage.set({
+          key: 'hasLaunchedBefore2',
+          value: 'true',
+          success: () => {},
+          fail: () => {}
+        });
+        router.push({
+          uri: 'pages/about'
+        });
+      }
+    });
+  }
+};
+</script>
+
+<style>
+.page{
+  background-color: rgb(248, 248, 255);
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  margin: auto;
+}
+.about{
+  background-color: rgba(255, 255, 255, 0);
+  justify-content: flex-start;
+  align-items: flex-end;
+  top: 15px;
+  right: 250px;
+  position: absolute;
+}
+.hd{
+    position: absolute;
+    top: 0;
+}
+.background{
+  top:0px;
+  position: absolute;
+}
+.background2{
+  top:100px;
+  position: absolute;
+}
+.reset2{
+  background-color: rgba(255, 255, 255, 0);
+  justify-content: flex-start;
+  align-items: flex-end;
+  bottom: 15px;
+  right: 15px;
+  position: absolute;
+}
+.logo{
+  top: 80px;
+}
+.settings{
+  background-color: rgba(255, 255, 255, 0);
+  justify-content: flex-start;
+  align-items: flex-end;
+  top: 15px;
+  left: 250px;
+  position: absolute;
+}
+.reset{
+  background-color: rgba(255, 255, 255, 0);
+  justify-content: flex-start;
+  align-items: flex-end;
+  bottom: 100px;
+  right: 15px;
+  position: absolute;
+}
+.back{
+  background-color: rgba(255, 255, 255, 0);
+  justify-content: flex-start;
+  align-items: flex-end;
+  bottom: 15px;
+  right: 15px;
+  position: absolute;
+}
+.group-1{
+  top:40px;
+  flex-direction: column;
+  width: 80%;
+}
+.mid{
+  margin-bottom:10px;
+  font-size: 35px;
+  color: #000;
+  font-weight: 800;
+}
+.bc{
+  position: absolute;
+  width: 336px;
+  height: 480px;
+  top: 0;
+  left: 0;
+  background-color: rgb(47, 52, 116);
+  z-index: -1;
+}
+.page1{
+  margin-top:50px;
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.877);
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  margin: auto;
+  width: 100%;
+}
+.page3{
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.877);
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: auto;
+  width: 100%;
+  bottom: 0;
+  top:0;
+}
+.load{
+  margin-top: 20px;
+  font-size: 35px;
+  color: #000;
+  font-weight: 800;
+  width: 80%;
+  background-color: rgba(167, 223, 255, 0.486);
+}
+.load2{
+  margin-top: 15px;
+  font-size: 40px;
+  color: #000;
+  font-weight: 800;
+  width: 80%;
+}
+
+.scroll{
+  top:5px;
+  height: 400px;
+  text-align: left;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  z-index: 0;
+  flex: 1;
+  width: 100%;
+}
+
+/* 存档项目样式 */
+.save-item {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+</style>

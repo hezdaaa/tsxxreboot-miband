@@ -1,0 +1,3 @@
+可用于部分加密不严格的krkr游戏拆包
+如亚托莉-我挚爱的时光
+先拖动原文件exe到KrkrExtract.Lite.exe上，再把需要解包的.xp3文件拖到弹出窗口上，记得勾选full unpack

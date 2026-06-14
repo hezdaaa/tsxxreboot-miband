@@ -1,0 +1,1 @@
+python dataCopyandMove.py scn 1
