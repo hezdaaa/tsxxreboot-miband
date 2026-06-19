@@ -326,12 +326,10 @@ export default {
         9401: (choices) => {
           if (
              choices[2029] === 2 &&
-             choices[3612] === 2 &&
-             choices[5248] === 2 &&
-             choices[7930] === 2 &&
+             choices[2963] === 1 &&
+             choices[5248] === 1 &&
              choices[8391] === 2 &&
-             choices[9096] === 5 &&
-             choices[9205] === 2) return 10561;
+             choices[9096] === 1) return 10561;
           else return 9402;
         },
         10043: (choices) => {

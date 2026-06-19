@@ -31,7 +31,7 @@
                 </div>
                 <text class="mid1">乃爱</text>
                 <div class="startBtn">
-                    <text class="startText" onclick="loadStart(1)">开始</text>
+                    <text class="startText" onclick="loadStart(19584)">开始</text>
                 </div>
             </div>
             
@@ -43,7 +43,7 @@
                 </div>
                 <text class="mid1">天音</text>
                 <div class="startBtn">
-                    <text class="startText" onclick="loadStart(1)">开始</text>
+                    <text class="startText" onclick="loadStart(29607)">开始</text>
                 </div>
             </div>
             
@@ -55,7 +55,7 @@
                 </div>
                 <text class="mid1">来海</text>
                 <div class="startBtn">
-                    <text class="startText" onclick="loadStart(1)">开始</text>
+                    <text class="startText" onclick="loadStart(40353)">开始</text>
                 </div>
             </div>
             
@@ -67,7 +67,7 @@
                 </div>
                 <text class="mid1">辉耶</text>
                 <div class="startBtn">
-                    <text class="startText" onclick="loadStart(1)">开始</text>
+                    <text class="startText" onclick="loadStart(49532)">开始</text>
                 </div>
             </div>
             
@@ -79,7 +79,7 @@
                 </div>
                 <text class="mid1">欧丽叶</text>
                 <div class="startBtn">
-                    <text class="startText" onclick="loadStart(1)">开始</text>
+                    <text class="startText" onclick="loadStart(55951)">开始</text>
                 </div>
             </div>
             
@@ -91,7 +91,7 @@
                 </div>
                 <text class="mid1">风实花</text>
                 <div class="startBtn">
-                    <text class="startText" onclick="loadStart(1)">开始</text>
+                    <text class="startText" onclick="loadStart(60805)">开始</text>
                 </div>
             </div>
             
@@ -164,18 +164,24 @@ export default {
     },
     
     // 开始后日谈（需要实现具体逻辑）
-
-    loadStart(a){
-    storage.set({
-      key: 'readProgress',
-      value: JSON.stringify(a),
-      success: () => console.log('进度设置成功'),
-      fail: (error) => console.error('进度设置失败:', error)
-    });
-    router.replace({
-      uri:'pages/detail'
-    })
-  },
+    async loadStart(a) {
+    try {
+        await new Promise((resolve, reject) => {
+            storage.set({
+                key: 'readProgress',
+                value: a.toString(),          // 直接用字符串即可
+                success: resolve,
+                fail: reject
+            });
+        });
+        console.log('进度设置成功');
+        router.push({ uri: 'pages/detail' });
+    } catch (error) {
+        console.error('进度设置失败:', error);
+        // 可考虑提示用户或依然跳转（但此时进度可能未保存）
+        // router.push({ uri: 'pages/detail' }); // 不推荐
+    }
+    },
 }; 
 </script> 
 

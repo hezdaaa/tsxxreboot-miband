@@ -144,8 +144,7 @@ export default {
             { line: 17106, label: 'CHAPTER6-5' },
             { line: 18181, label: 'CHAPTER7-1' },
             { line: 18504, label: 'CHAPTER7-2' },
-            { line: 19434, label: 'CHAPTER8-1' },
-            { line: 19584, label: 'CHAPTER9-1' }
+            { line: 19434, label: 'CHAPTER8-1' }
         ],
         // 谷风天音个人线章节
         tianyinChapters: [
@@ -162,8 +161,7 @@ export default {
             { line: 27597, label: 'CHAPTER6-3' },
             { line: 28346, label: 'CHAPTER7-1' },
             { line: 28366, label: 'CHAPTER7-2' },
-            { line: 28727, label: 'CHAPTER7-3' },
-            { line: 29607, label: 'CHAPTER8-1' }
+            { line: 28727, label: 'CHAPTER7-3' }
         ],
         // 小云雀来海个人线章节
         laihaiChapters: [
@@ -187,8 +185,7 @@ export default {
             { line: 38213, label: 'CHAPTER7-4' },
             { line: 38859, label: 'CHAPTER8-1' },
             { line: 39603, label: 'CHAPTER8-2' },
-            { line: 40263, label: 'CHAPTER8-3' },
-            { line: 40353, label: 'CHAPTER9-1' }
+            { line: 40263, label: 'CHAPTER8-3' }
         ],
         // 星河辉耶个人线章节
         huiyeChapters: [
@@ -216,34 +213,22 @@ export default {
             { line: 48423, label: 'CHAPTER7-1' },
             { line: 48764, label: 'CHAPTER7-2' },
             { line: 49349, label: 'CHAPTER7-3' },
-            { line: 49430, label: 'CHAPTER8-1' },
-            { line: 49532, label: 'CHAPTER9-1' }
+            { line: 49430, label: 'CHAPTER8-1' }
         ],
         // 高楯欧丽叶个人线章节
         oliyeChapters: [
-            { line: 50193, label: 'CHAPTER4-1' },
-            { line: 50424, label: 'CHAPTER4-1' },      // 分支重复章节
+            { line: 50193, label: 'CHAPTER4-1' },    // 分支重复章节
             { line: 50633, label: 'CHAPTER4-2' },
-            { line: 51034, label: 'CHAPTER4-3' },
-            { line: 51375, label: 'CHAPTER4-3' },      // 分支重复章节
+            { line: 51034, label: 'CHAPTER4-3' },    // 分支重复章节
             { line: 51453, label: 'CHAPTER5-1' },
             { line: 51485, label: 'CHAPTER5-2' },
             { line: 51711, label: 'CHAPTER5-3' },
-            { line: 51836, label: 'CHAPTER5-4' },
-            { line: 52175, label: 'CHAPTER5-4' },      // 分支重复章节
+            { line: 51836, label: 'CHAPTER5-4' },   // 分支重复章节
             { line: 52634, label: 'CHAPTER6-1' },
-            { line: 52997, label: 'CHAPTER6-2' },
-            { line: 53534, label: 'CHAPTER6-2' },      // 分支重复章节
-            { line: 54216, label: 'CHAPTER6-2' },      // 分支重复章节
-            { line: 54402, label: 'CHAPTER7-1' },
-            { line: 54749, label: 'CHAPTER7-1' },      // 分支重复章节
-            { line: 55018, label: 'CHAPTER7-1' },      // 分支重复章节
-            { line: 55083, label: 'CHAPTER7-2' },
-            { line: 55187, label: 'CHAPTER7-2' },      // 分支重复章节
-            { line: 55336, label: 'CHAPTER7-2' },      // 分支重复章节
-            { line: 55769, label: 'CHAPTER7-2' },      // 分支重复章节
-            { line: 55839, label: 'CHAPTER7-3' },
-            { line: 55951, label: 'CHAPTER8-1' }
+            { line: 52997, label: 'CHAPTER6-2' },   // 分支重复章节
+            { line: 54402, label: 'CHAPTER7-1' },   // 分支重复章节
+            { line: 55083, label: 'CHAPTER7-2' },  // 分支重复章节
+            { line: 55839, label: 'CHAPTER7-3' }
         ],
         // 百里风实花个人线章节
         fengshihuaChapters: [
@@ -256,22 +241,26 @@ export default {
             { line: 58955, label: 'CHAPTER5-1' },
             { line: 59121, label: 'CHAPTER5-2' },
             { line: 59948, label: 'CHAPTER5-3' },
-            { line: 60728, label: 'CHAPTER5-3' },      // 分支重复章节
-            { line: 60805, label: 'CHAPTER6-1' },
-            { line: 60873, label: 'CHAPTER6-2' },
-            { line: 61426, label: 'CHAPTER6-3' }
+            { line: 60728, label: 'CHAPTER5-3' }
         ]
     }, 
-    loadStart(a){
-        storage.set({
-          key: 'readProgress',
-          value: JSON.stringify(a),
-          success: () => console.log('进度设置成功'),
-          fail: (error) => console.error('进度设置失败:', error)
+    async loadStart(a) {
+    try {
+        await new Promise((resolve, reject) => {
+            storage.set({
+                key: 'readProgress',
+                value: a.toString(),          // 直接用字符串即可
+                success: resolve,
+                fail: reject
+            });
         });
-        router.push({
-          uri:'pages/detail'
-        })
+        console.log('进度设置成功');
+        router.push({ uri: 'pages/detail' });
+    } catch (error) {
+        console.error('进度设置失败:', error);
+        // 可考虑提示用户或依然跳转（但此时进度可能未保存）
+        // router.push({ uri: 'pages/detail' }); // 不推荐
+    }
     },
     back(){ 
         router.back({
