@@ -258,7 +258,7 @@ export default {
         9392:9393,
         56474:9393,
         10704:9995,
-        9963:9995,
+        9633:9995,
         9763:9995,
         9971:9995,
       },
@@ -347,7 +347,6 @@ export default {
           if (
              choices[2029] === 2 &&
              choices[2963] === 1 &&
-             choices[3612] === 0 &&
              choices[5248] === 1 &&
              choices[8391] === 2 &&
              choices[9096] === 1) return 10705;
@@ -355,7 +354,7 @@ export default {
              choices[2029] === 2 &&
              choices[3612] === 2 &&
              choices[5248] === 2 &&
-             choices[6062] === 1 &&
+             choices[6002] === 1 &&
              choices[8391] === 2 &&
              choices[9096] === 2 &&
              choices[9205] === 1 &&
@@ -385,6 +384,8 @@ export default {
       choices: {
       },
       end: {
+        10070:"END",
+        10559:"BAD END",
         10559:"BAD END",
         17922:"BAD END",
         19583:"Noa end",
